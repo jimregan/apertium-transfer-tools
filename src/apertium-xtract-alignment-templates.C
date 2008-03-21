@@ -176,11 +176,11 @@ int main(int argc, char* argv[]) {
   ATXReader atx_reader;
   atx_reader.read(atx_file);
 
-  cerr<<"Source language: "<<atx_reader.get_source_language()<<"\n";
-  cerr<<"Target language: "<<atx_reader.get_target_language()<<"\n\n";
+  wcerr<<L"Source language: "<<atx_reader.get_source_language()<<L"\n";
+  wcerr<<L"Target language: "<<atx_reader.get_target_language()<<L"\n\n";
 
-  cerr<<"Will alignment templates be discarded if aligned open words differ at the first tag? "<<equalcat<<"\n";
-  cerr<<"Will alignment templates be discarded if are equivalent to word-for-word translation? "<<noword4word<<"\n\n";
+  wcerr<<L"Will alignment templates be discarded if aligned open words differ at the first tag? "<<equalcat<<L"\n";
+  wcerr<<L"Will alignment templates be discarded if are equivalent to word-for-word translation? "<<noword4word<<L"\n\n";
 
   AlignmentTemplate::set_lexicalized_words(atx_reader.get_source_lexicalized_words(),
 					   atx_reader.get_target_lexicalized_words());
