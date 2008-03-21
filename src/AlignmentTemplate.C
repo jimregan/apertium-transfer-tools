@@ -35,15 +35,15 @@ AlignmentTemplate::AlignmentTemplate(wstring al):Alignment(al,5) {
   invalid=VALID;
   vector<wstring> v;
 
-  v=Utils::split_string(al, L" | ");
+  v=StringUtils::split_wstring(al, L" | ");
 
   if (v.size()!=5) {
     wcerr<<L"Error in AlignmentTemplate::AlignmentTemplate when reading alignment template from string '"<<al<<L"'\n";
-    cerr<<"Unespected number of fields separated by ' | '\n";
+    wcerr<<L"Unexpected number of fields separated by ' | '\n";
     exit(EXIT_FAILURE); 
   }
 
-  restrictions=Utils::split_string(v[4], L" ");
+  restrictions=StringUtils::split_wstring(v[4], L" ");
 }
 
 AlignmentTemplate::AlignmentTemplate(const AlignmentTemplate& al):Alignment(al) {
