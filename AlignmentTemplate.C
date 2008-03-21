@@ -127,8 +127,8 @@ AlignmentTemplate::to_string() {
   return s;
 }
 
-ostream& operator << (ostream& os, AlignmentTemplate& at) {
-  os<<at.to_string();
+wostream& operator << (wostream& os, AlignmentTemplate& at) {
+  os<<at.to_wstring();
   return os;
   /*
   Alignment &al=at;
