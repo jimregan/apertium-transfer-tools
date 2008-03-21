@@ -3,9 +3,10 @@
 
 AC_PREREQ(2.52)
 
-m4_define([required_lttoolbox_version], [2.0])
-m4_define([required_apertium_version], [2.0])
+m4_define([required_lttoolbox_version], [3.0])
+m4_define([required_apertium_version], [3.0])
 m4_define([required_libxml_version], [2.6.17])
+m4_define([required_libpcre_version], [6.4])
 
 AC_INIT([apertium-transfer-tools], [0.9.1], [fsanchez@dlsi.ua.es])
 
@@ -138,14 +139,21 @@ AC_CHECK_HEADERS(zlib.h,
 AC_SUBST(Z_CFLAGS)
 AC_SUBST(Z_LIBS)
 
+AC_CHECK_HEADER(pcreposix.h,
+  AC_CHECK_LIB(pcre, pcre_info,[
+  LIBS="$LIBS -lpcreposix -lpcre"
+  no_comp_check=yes],
+  AC_MSG_ERROR([*** unable to locate pcre library ***])),
+  AC_MSG_ERROR([*** unable to locate pcreposix.h include file ***]))
+
 PKG_CHECK_MODULES(LIBXML2, [dnl
   libxml-2.0 >= required_libxml_version])
 
 PKG_CHECK_MODULES(LTTOOLBOX, [dnl
-  lttoolbox-2.0 >= required_lttoolbox_version])
+  lttoolbox-3.0 >= required_lttoolbox_version])
   
 PKG_CHECK_MODULES(APERTIUM, [dnl
-  apertium-2.0 >= required_apertium_version])
+  apertium-3.0 >= required_apertium_version])
 
 AC_PATH_PROG(XMLLINT, xmllint, no)
 
