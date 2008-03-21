@@ -20,8 +20,7 @@
 #include "Utils.H"
 
 #include <iostream>
-#include <wchar.h>
-#include <wctype.h>
+#include <lttoolbox/xml_parse_util.h>
 #include <stdio.h>
 
 //Delete white spaces from the end and the begining of the string
@@ -160,18 +159,18 @@ Utils::tags2transferformat(const wstring& tags) {
   return s;
 }
 
-string
+wstring
 Utils::itoa(int n) {
   char str[32];
   sprintf(str, "%d",n);
-  return str;
+  return XMLParseUtil::stows(str);
 }
 
-string
+wstring
 Utils::ftoa(double f) {
   char str[32];
   sprintf(str, "%f",f);
-  return str;
+  return XMLParseUtil::stows(str);
 }
 
 wstring 
