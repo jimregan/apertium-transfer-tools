@@ -31,11 +31,11 @@ using namespace std;
 class Alignment {
 protected:
   double score;
-  vector<wstring> source;
-  vector<wstring> target;
+  vector<string> source;
+  vector<string> target;
 
   //Matrix source.size x target.size with the alignments
-  map<long int, map<long int, bool> > alignment;
+  map<int, map<int, bool> > alignment;
 
   //True if the elements in SP are consecutive
   bool consecutive(const set<int>& SP);
@@ -53,7 +53,7 @@ public:
        
   Alignment();
 
-  Alignment(wstring al, int nfields=4);
+  Alignment(string al, int nfields=4);
 
   Alignment(const Alignment& al);
     
@@ -67,7 +67,7 @@ public:
 
   int length();
 
-  wstring to_wstring();
+  string to_string();
 
   //(*this) becomes the intersected alignment
   bool intersection(Alignment& al2);
@@ -86,7 +86,7 @@ public:
   //with at least one target word and vice versa
   bool all_end_words_aligned();
   
-  friend wostream& operator << (wostream& os, Alignment& al);
+  friend ostream& operator << (ostream& os, Alignment& al);
 
   friend class AlignmentTemplate;
 };
