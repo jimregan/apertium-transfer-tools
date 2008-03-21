@@ -20,41 +20,43 @@
 
 #include "Alignment.H"
 #include "Utils.H"
+#include <apertium/string_utils.h>
 
 #include <cstdlib>
 #include <iostream>
 #include <cmath>
+#include <wchar.h>
 
 Alignment::Alignment() {
 }
 
-Alignment::Alignment(string al, int nfields) {
-  vector<string> v;
-  vector<string> alig;
+Alignment::Alignment(wstring al, int nfields) {
+  vector<wstring> v;
+  vector<wstring> alig;
 
-  v=Utils::split_string(al, " | ");
+  v=StringUtils::split_wstring(al, L" | ");
 
   if (v.size()!=(unsigned)nfields) {
-    cerr<<"Error in Alignment::Alignment when reading alignment from string '"<<al<<"'\n";
-    cerr<<"Unespected number of fields separated by ' | '\n";
+    wcerr<<L"Error in Alignment::Alignment when reading alignment from string '"<<al<<L"'\n";
+    wcerr<<L"Unexpected number of fields separated by ' | '\n";
     exit(EXIT_FAILURE); 
   }
 
-  score=atof(v[0].c_str());
-  source=Utils::split_string(v[1], " ");
-  target=Utils::split_string(v[2], " ");
-  alig=Utils::split_string(v[3], " ");
+  score=wcstof(v[0].c_str());
+  source=StringUtils::split_wstring(v[1], L" ");
+  target=StringUtils::split_wstring(v[2], L" ");
+  alig=StringUtils::split_wstring(v[3], L" ");
 
   for(unsigned i=0; i<alig.size(); i++) {
-    vector<string> an_alig;
+    vector<wstring> an_alig;
 
-    an_alig=Utils::split_string(alig[i], ":");
+    an_alig=StringUtils::split_wstring(alig[i], L":");
     if (an_alig.size()!=2) {
-      cerr<<"Error in Alignment::Alignment when reading alignment from string '"<<al<<"'\n";
-      cerr<<"Unespected number of alignment values separated by ':'\n";
+      wcerr<<L"Error in Alignment::Alignment when reading alignment from string '"<<al<<L"'\n";
+      wcerr<<L"Unexpected number of alignment values separated by ':'\n";
       exit(EXIT_FAILURE);
     }
-    alignment[atoi(an_alig[0].c_str())][atoi(an_alig[1].c_str())]=true;
+    alignment[wcstol(an_alig[0].c_str())][wcstol(an_alig[1].c_str())]=true;
   }
 }
 
@@ -84,23 +86,23 @@ Alignment::length() {
   return source.size();
 }
 
-string
-Alignment::to_string() {
-  string s;
-  s=Utils::itoa((int)score)+" |";
+wstring
+Alignment::to_wstring() {
+  wstring s;
+  s=StringUtils::itoa((int)score)+L" |";
 
   for(unsigned i=0; i<source.size(); i++) 
-    s+=" "+source[i];
-  s+=" |";
+    s+=L" "+source[i];
+  s+=L" |";
 
   for(unsigned i=0; i<target.size(); i++) 
-    s+=" "+target[i];
-  s+=" |";
+    s+=L" "+target[i];
+  s+=L" |";
 
   for (unsigned i=0; i<source.size(); i++) {
     for(unsigned j=0; j<target.size(); j++) {
       if (alignment[i][j])
-	s+=" "+Utils::itoa(i)+":"+Utils::itoa(j);
+	s+=L" "+StringUtils::itoa(i)+L":"+StringUtils::itoa(j);
     }
   }
 
@@ -252,26 +254,26 @@ Alignment::sub_alignment(int from_source, int to_source, int from_target, int to
   return al;
 }
 
-ostream& operator << (ostream& os, Alignment& al) {
+wostream& operator << (wostream& os, Alignment& al) {
 
-  os<<al.to_string();
+  os<<al.to_wstring();
   return os;
 
   /*
-  os<<al.score<<" |";
+  os<<al.score<<L" |";
 
   for(int i=0; i<al.source.size(); i++) 
-    os<<" "<<al.source[i];
+    os<<L" "<<al.source[i];
   os<<" |";
 
   for(int i=0; i<al.target.size(); i++) 
-    os<<" "<<al.target[i];
-  os<<" |";
+    os<<L" "<<al.target[i];
+  os<<L" |";
 
   for (int i=0; i<al.source.size(); i++) {
     for(int j=0; j<al.target.size(); j++) {
       if (al.alignment[i][j])
-	os<<" "<<i<<":"<<j;
+	os<<L" "<<i<<L":"<<j;
     }
   }
 
@@ -373,9 +375,9 @@ Alignment::are_the_same_alignment(const Alignment& al2) {
 bool 
 Alignment::intersection(Alignment& al2) {
   if (!are_the_same_alignment(al2)) {
-    cerr<<"Error when intersecting the following two alignments:\n";
-    cerr<<to_string()<<"\n";
-    cerr<<al2.to_string()<<"\n";
+    wcerr<<L"Error when intersecting the following two alignments:\n";
+    wcerr<<to_wstring()<<L"\n";
+    wcerr<<al2.to_wstring()<<L"\n";
     return false;
   }
 
@@ -393,9 +395,9 @@ Alignment::intersection(Alignment& al2) {
 bool
 Alignment::unionn(Alignment& al2) {
   if (!are_the_same_alignment(al2)) {
-    cerr<<"Error when uniting the following two alignments:\n";
-    cerr<<to_string()<<"\n";
-    cerr<<al2.to_string()<<"\n";
+    wcerr<<L"Error when uniting the following two alignments:\n";
+    wcerr<<to_wstring()<<L"\n";
+    wcerr<<al2.to_wstring()<<L"\n";
     return false;
   }
 
@@ -413,9 +415,9 @@ Alignment::unionn(Alignment& al2) {
 bool 
 Alignment::refined_intersection(Alignment& al2) {
   if (!are_the_same_alignment(al2)) {
-    cerr<<"Error when performing the refined intersection of the following two alignments:\n";
-    cerr<<to_string()<<"\n";
-    cerr<<al2.to_string()<<"\n";
+    wcerr<<L"Error when performing the refined intersection of the following two alignments:\n";
+    wcerr<<to_wstring()<<L"\n";
+    wcerr<<al2.to_wstring()<<L"\n";
     return false;
   }
 

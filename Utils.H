@@ -30,12 +30,12 @@ class Utils {
   
   static wstring trim(wstring str);
 
-  static vector<wstring> split_string(const wstring& input, const wstring& delimiter);
+  static vector<string> split_string(const string& input, const string& delimiter);
 
-  static wstring vector2string(const vector<wstring>& v);
+  static string vector2string(const vector<string>& v);
 
   //Replace each ocurrence of the string 'olds' by the string 'news' in string 'source'
-  static wstring substitute(const wstring& source, const wstring& olds, const wstring& news);
+  static string substitute(const string& source, const string& olds, const string& news);
 
   //Remove begin (^) and end mark ($)
   static wstring remove_begin_and_end_marks(wstring word);
@@ -74,9 +74,9 @@ class Utils {
   //Ex. of output: n.m.sg
   static wstring tags2transferformat(const wstring& tags);
 
-  static wstring itoa(int n);
+  static string itoa(int n);
   
-  static wstring ftoa(double f);
+  static string ftoa(double f);
 
   static wstring strtolower(const wstring& s);
 

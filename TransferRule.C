@@ -42,7 +42,7 @@ TransferRule::~TransferRule() {
 
 bool 
 TransferRule::add_alignment_template(const AlignmentTemplate& at) {
-  wstring source_at=Utils::vector2string(at.source);
+  wstring source_at=StringUtils::vector2wstring(at.source);
   if (source.length()==0)
     source=source_at;
 
@@ -122,12 +122,12 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
 	teststr+=L"          <or>\n";
 
 	teststr+=L"            <equal>\n";
-	teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\"tags\" queue=\"no\"/>\n";
+	teststr+=L"              <clip pos=\""+StringUtils::itoa(j+1)+L"\" side=\"tl\" part=\"tags\" queue=\"no\"/>\n";
 	teststr+=L"              <lit-tag v=\""+Utils::tags2transferformat(ats[i].restrictions[j])+L"\"/>\n";
 	teststr+=L"            </equal>\n";
 
 	teststr+=L"            <equal>\n";
-	teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\"tags\" queue=\"yes\"/>\n";
+	teststr+=L"              <clip pos=\""+StringUtils::itoa(j+1)+L"\" side=\"tl\" part=\"tags\" queue=\"yes\"/>\n";
 	teststr+=L"              <lit-tag v=\""+Utils::tags2transferformat(Utils::get_tags(ats[i].target[ats[i].get_open_target_word_pos(j)]))+L"\"/>\n";
 	teststr+=L"            </equal>\n";
 
@@ -175,7 +175,7 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
 	rule+=L"          </lu>\n";
 	rule+=L"        </out>\n";
 
-	wstring genre=Utils::get_tag_value(target_tags,"m|f");
+	wstring genre=Utils::get_tag_value(target_tags,L"m|f");
 	if(genre.length()>0)
 	  rule+=L"        <let><var n=\"genre\"/><lit-tag v=\""+genre+L"\"/></let>\n";
 
@@ -183,20 +183,20 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
 	int pos=ats[i].get_open_source_word_pos(j);
 	rule+=L"        <out>\n";
 	rule+=L"          <lu>\n";
-	rule+=L"            <clip pos=\""+Utils::itoa(pos+1)+L"\" side=\"tl\" part=\"lemh\"/>\n";
+	rule+=L"            <clip pos=\""+StringUtils::itoa(pos+1)+L"\" side=\"tl\" part=\"lemh\"/>\n";
 	rule+=L"            <lit-tag v=\""+Utils::tags2transferformat(Utils::get_tags(ats[i].target[j]))+L"\"/>\n";
-	rule+=L"            <clip pos=\""+Utils::itoa(pos+1)+L"\" side=\"tl\" part=\"lemq\"/>\n";
+	rule+=L"            <clip pos=\""+StringUtils::itoa(pos+1)+L"\" side=\"tl\" part=\"lemq\"/>\n";
 	rule+=L"          </lu>\n";
 	rule+=L"        </out>\n";
 
         rule+=L"        <call-macro n=\"f_genre_num\">\n";
-        rule+=L"          <with-param pos=\""+Utils::itoa(pos+1)+L"\"/>\n";
+        rule+=L"          <with-param pos=\""+StringUtils::itoa(pos+1)+L"\"/>\n";
         rule+=L"        </call-macro>\n";
       }
 
       if (blank_pos<(int)(ats[i].source.size()-1)) {
 	rule+=L"        <out>\n";
-	rule+=L"          <b pos=\""+Utils::itoa(blank_pos+1)+L"\"/>\n";
+	rule+=L"          <b pos=\""+StringUtils::itoa(blank_pos+1)+L"\"/>\n";
 	rule+=L"        </out>\n";
 	blank_pos++;
       } else if (j<(ats[i].target.size()-1)) {
@@ -218,7 +218,7 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
     //longer than the TL output one
     for (unsigned j=ats[i].target.size(); j<ats[i].source.size(); j++) {
       rule+=L"        <call-macro n=\"f_bcond\">\n";
-      rule+=L"          <with-param pos=\""+Utils::itoa(j)+L"\"/>\n";
+      rule+=L"          <with-param pos=\""+StringUtils::itoa(j)+L"\"/>\n";
       rule+=L"        </call-macro>\n";
     }
 
@@ -243,24 +243,24 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
 
     for(unsigned i=0; i<ats[0].source.size(); i++) {
       rule+=L"        <call-macro n=\"f_genre_num\">\n";
-      rule+=L"          <with-param pos=\""+Utils::itoa(i+1)+L"\"/>\n";
+      rule+=L"          <with-param pos=\""+StringUtils::itoa(i+1)+L"\"/>\n";
       rule+=L"        </call-macro>\n";
 
       rule+=L"        <call-macro n=\"f_set_genre_num\">\n";
-      rule+=L"          <with-param pos=\""+Utils::itoa(i+1)+"\"/>\n";
+      rule+=L"          <with-param pos=\""+StringUtils::itoa(i+1)+L"\"/>\n";
       rule+=L"        </call-macro>\n";
 
       rule+=L"        <out>\n";
       rule+=L"          <lu>\n";
 
-      rule+=L"            <clip pos=\""+Utils::itoa(i+1)+L"\" side=\"tl\" part=\"whole\"/>\n";
-      //rule+=L"            <clip pos=\""+Utils::itoa(i+1)+L"\" side=\"tl\" part=\"lemh\"/>\n";
-      //rule+=L"            <clip pos=\""+Utils::itoa(i+1)+L"\" side=\"tl\" part=\"tags\"/>\n";
-      //rule+=L"            <clip pos=\""+Utils::itoa(i+1)+L"\" side=\"tl\" part=\"lemq\"/>\n";
+      rule+=L"            <clip pos=\""+StringUtils::itoa(i+1)+L"\" side=\"tl\" part=\"whole\"/>\n";
+      //rule+=L"            <clip pos=\""+StringUtils::itoa(i+1)+L"\" side=\"tl\" part=\"lemh\"/>\n";
+      //rule+=L"            <clip pos=\""+StringUtils::itoa(i+1)+L"\" side=\"tl\" part=\"tags\"/>\n";
+      //rule+=L"            <clip pos=\""+StringUtils::itoa(i+1)+L"\" side=\"tl\" part=\"lemq\"/>\n";
 
       rule+=L"          </lu>\n";
       if (i<(ats[0].source.size()-1))
-	rule+=L"          <b pos=\""+Utils::itoa(i+1)+L"\"/>\n";
+	rule+=L"          <b pos=\""+StringUtils::itoa(i+1)+L"\"/>\n";
       rule+=L"        </out>\n";
     }
     if (debug) {
@@ -505,9 +505,9 @@ TransferRule::category_name(const wstring& lemma, const wstring& tags) {
   wstring catname=L"";
 
   if (lemma.length()>0)
-    catname+=Utils::substitute(lemma,L"#",L"_")+L"_";
+    catname+=StringUtils::substitute(lemma,L"#",L"_")+L"_";
 
-  catname+=Utils::substitute(tags,L".",L"");
+  catname+=StringUtils::substitute(tags,L".",L"");
 
   return catname;
 }

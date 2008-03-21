@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <lttoolbox/xml_parse_util.h>
+#include <apertium/string_utils.h>
 #include <stdio.h>
 
 //Delete white spaces from the end and the begining of the string
@@ -39,12 +40,12 @@ Utils::trim(wstring str) {
   return str;
 }
 
-vector<wstring>
-Utils::split_string(const wstring& input, const wstring& delimiter) {
+vector<string>
+Utils::split_string(const string& input, const string& delimiter) {
   int pos;
   int new_pos;
-  vector<wstring> result;
-  wstring s=L"";
+  vector<string> result;
+  string s="";
   pos=0;
 
   while (pos<(int)input.size()) {
@@ -63,20 +64,20 @@ Utils::split_string(const wstring& input, const wstring& delimiter) {
   return result;
 }
 
-wstring 
-Utils::vector2string(const vector<wstring>& v) {
-  wstring s=L"";
+string 
+Utils::vector2string(const vector<string>& v) {
+  string s="";
   for(unsigned i=0; i<v.size(); i++) {
     if (i>0)
-      s+=L" ";
+      s+=" ";
     s+=v[i];
   }
   return s;
 }
 
-wstring 
-Utils::substitute(const wstring& source, const wstring& olds, const wstring& news) {
-  wstring s=source;
+string 
+Utils::substitute(const string& source, const string& olds, const string& news) {
+  string s=source;
 
   int p=s.find(olds,0);
   while (p!=(int)string::npos) {
@@ -152,30 +153,30 @@ Utils::is_unknown_word(wstring word) {
 wstring 
 Utils::tags2transferformat(const wstring& tags) {
   wstring s;
-  s=substitute(tags,L"><",L".");
-  s=substitute(s,L"<",L"");
-  s=substitute(s,L">",L"");
+  s=StringUtils::substitute(tags,L"><",L".");
+  s=StringUtils::substitute(s,L"<",L"");
+  s=StringUtils::substitute(s,L">",L"");
 
   return s;
 }
 
-wstring
+string
 Utils::itoa(int n) {
   char str[32];
   sprintf(str, "%d",n);
-  return XMLParseUtil::stows(str);
+  return str;
 }
 
-wstring
+string
 Utils::ftoa(double f) {
   char str[32];
   sprintf(str, "%f",f);
-  return XMLParseUtil::stows(str);
+  return str;
 }
 
 wstring 
 Utils::get_tag_value(wstring tags, wstring values) {
-  vector<wstring> pval=split_string(values,L"|");
+  vector<wstring> pval=StringUtils::split_wstring(values,L"|");
 
   for(unsigned i=0; i<pval.size(); i++) {
     if (tags.find(pval[i]) != string::npos)
