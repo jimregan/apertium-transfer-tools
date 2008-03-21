@@ -27,7 +27,7 @@ using namespace std;
 #include <iostream>
 #include <map>
 #include <set>
-#include <lttoolbox/FSTProcessor.H>
+#include <lttoolbox/fst_processor.h>
 
 #include "Alignment.H"
 #include "LexicalizedWords.H"
