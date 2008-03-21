@@ -19,7 +19,7 @@
 
 
 #include "ATXReader.H"
-#include <lttoolbox/XMLParseUtil.H>
+#include <lttoolbox/xml_parse_util.h>
 
 void
 ATXReader::copy(ATXReader const &o) {

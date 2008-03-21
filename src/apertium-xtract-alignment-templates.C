@@ -25,7 +25,7 @@
 #include <ctime>
 #include <clocale>
 
-#include <lttoolbox/FSTProcessor.H>
+#include <lttoolbox/fst_processor.h>
 
 #include "configure.H"
 #include "Alignment.H"
