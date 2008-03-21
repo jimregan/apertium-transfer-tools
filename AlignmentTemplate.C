@@ -31,19 +31,19 @@ AlignmentTemplate::AlignmentTemplate() {
   invalid=VALID;
 }
 
-AlignmentTemplate::AlignmentTemplate(string al):Alignment(al,5) {
+AlignmentTemplate::AlignmentTemplate(wstring al):Alignment(al,5) {
   invalid=VALID;
-  vector<string> v;
+  vector<wstring> v;
 
-  v=Utils::split_string(al, " | ");
+  v=Utils::split_string(al, L" | ");
 
   if (v.size()!=5) {
-    cerr<<"Error in AlignmentTemplate::AlignmentTemplate when reading alignment template from string '"<<al<<"'\n";
+    wcerr<<L"Error in AlignmentTemplate::AlignmentTemplate when reading alignment template from string '"<<al<<L"'\n";
     cerr<<"Unespected number of fields separated by ' | '\n";
     exit(EXIT_FAILURE); 
   }
 
-  restrictions=Utils::split_string(v[4], " ");
+  restrictions=Utils::split_string(v[4], L" ");
 }
 
 AlignmentTemplate::AlignmentTemplate(const AlignmentTemplate& al):Alignment(al) {
@@ -87,8 +87,8 @@ AlignmentTemplate::is_valid(bool equalcat, bool noword4word, FSTProcessor& fstp,
       if (source[i][0]=='<') { //It's an open word
 	int j=get_open_target_word_pos(i);
 
-	string first_sl_tag=Utils::get_first_tag(source[i]);
-	string first_tl_tag=Utils::get_first_tag(target[j]);
+	wstring first_sl_tag=Utils::get_first_tag(source[i]);
+	wstring first_tl_tag=Utils::get_first_tag(target[j]);
 
 	if (first_sl_tag!=first_tl_tag) {
 	  invalid=INVALID_NO_EQUALCAT;
@@ -114,15 +114,15 @@ AlignmentTemplate::invalid_reason() {
   return invalid;
 }
 
-string
+wstring
 AlignmentTemplate::to_string() {
   Alignment &al=(*this);
-  string s=al.to_string();
+  wstring s=al.to_string();
 
-  s+=" |";
+  s+=L" |";
 
   for(unsigned i=0; i<restrictions.size(); i++) 
-    s+=" "+restrictions[i];
+    s+=L" "+restrictions[i];
 
   return s;
 }
@@ -164,8 +164,8 @@ AlignmentTemplate::xtract_alignment_template(Alignment& al, FSTProcessor& fstp) 
 
   //Determine the word class for each source word
   for(unsigned i=0; i<al.source.size(); i++) {
-    string w=Utils::remove_begin_and_end_marks(al.source[i]);
-    string wclass;
+    wstring w=Utils::remove_begin_and_end_marks(al.source[i]);
+    wstring wclass;
 
     if (Utils::is_unknown_word(w))
       wclass="__UNKNOWN__";

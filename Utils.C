@@ -20,29 +20,32 @@
 #include "Utils.H"
 
 #include <iostream>
+#include <wchar.h>
+#include <wctype.h>
+#include <stdio.h>
 
 //Delete white spaces from the end and the begining of the string
-string 
-Utils::trim(string str) { 
-  string::iterator it;
+wstring 
+Utils::trim(wstring str) { 
+  wstring::iterator it;
   
-  while ((str.length()>0)&&((*(it=str.begin()))==' ')) {
+  while ((str.length()>0)&&((*(it=str.begin()))==L' ')) {
      str.erase(it);
   }
   
-  while ((str.length()>0)&&((*(it=(str.end()-1)))==' ')) {
+  while ((str.length()>0)&&((*(it=(str.end()-1)))==L' ')) {
      str.erase(it);
   }
 
   return str;
 }
 
-vector<string>
-Utils::split_string(const string& input, const string& delimiter) {
+vector<wstring>
+Utils::split_string(const wstring& input, const wstring& delimiter) {
   int pos;
   int new_pos;
-  vector<string> result;
-  string s="";
+  vector<wstring> result;
+  wstring s=L"";
   pos=0;
 
   while (pos<(int)input.size()) {
@@ -61,20 +64,20 @@ Utils::split_string(const string& input, const string& delimiter) {
   return result;
 }
 
-string 
-Utils::vector2string(const vector<string>& v) {
-  string s="";
+wstring 
+Utils::vector2string(const vector<wstring>& v) {
+  wstring s=L"";
   for(unsigned i=0; i<v.size(); i++) {
     if (i>0)
-      s+=" ";
+      s+=L" ";
     s+=v[i];
   }
   return s;
 }
 
-string 
-Utils::substitute(const string& source, const string& olds, const string& news) {
-  string s=source;
+wstring 
+Utils::substitute(const wstring& source, const wstring& olds, const wstring& news) {
+  wstring s=source;
 
   int p=s.find(olds,0);
   while (p!=(int)string::npos) {
@@ -87,72 +90,72 @@ Utils::substitute(const string& source, const string& olds, const string& news) 
 }
 
 
-string 
-Utils::remove_begin_and_end_marks(string word) {
+wstring 
+Utils::remove_begin_and_end_marks(wstring word) {
   return word.substr(1, word.size()-2);
 }
 
-string
-Utils::get_lemma(string word) {
-  string s="";
+wstring
+Utils::get_lemma(wstring word) {
+  wstring s=L"";
 
-  int p=word.find("<",0);
+  int p=word.find(L"<",0);
   if (p!=(int)string::npos)
     s=word.substr(0, p);
 
   return s;
 }
 
-string 
-Utils::get_lemma_without_queue(string word) {
-  string l=get_lemma(word);
-  string s=l;
+wstring 
+Utils::get_lemma_without_queue(wstring word) {
+  wstring l=get_lemma(word);
+  wstring s=l;
 
-  int p=l.find("#",0);
+  int p=l.find(L"#",0);
   if (p!=(int)string::npos)
     s=l.substr(0, p);
 
   return s;
 }
 
-string 
-Utils::get_queue(string word) {
-  string l=get_lemma(word);
-  string s="";
+wstring 
+Utils::get_queue(wstring word) {
+  wstring l=get_lemma(word);
+  wstring s=L"";
 
-  int p=l.find("#",0);
+  int p=l.find(L"#",0);
   if (p!=(int)string::npos)
     s=l.substr(p);
 
   return s;
 }
 
-string
-Utils::get_tags(string word) {
-  int p=word.find("<",0);
+wstring
+Utils::get_tags(wstring word) {
+  int p=word.find(L"<",0);
   if (p!=(int)string::npos)
     return word.substr(p, word.size()-p);
   else //Unknown word, no tags for it
-    return "";
+    return L"";
 }
 
-string
-Utils::get_first_tag(string tags) {
-  int p=tags.find(">",0);
+wstring
+Utils::get_first_tag(wstring tags) {
+  int p=tags.find(L">",0);
   return tags.substr(0,p+1);
 }
 
 bool 
-Utils::is_unknown_word(string word) {
-  return ((word.length()>0)&&(word[0]=='*'));
+Utils::is_unknown_word(wstring word) {
+  return ((word.length()>0)&&(word[0]==L'*'));
 }
 
-string 
-Utils::tags2transferformat(const string& tags) {
-  string s;
-  s=substitute(tags,"><",".");
-  s=substitute(s,"<","");
-  s=substitute(s,">","");
+wstring 
+Utils::tags2transferformat(const wstring& tags) {
+  wstring s;
+  s=substitute(tags,L"><",L".");
+  s=substitute(s,L"<",L"");
+  s=substitute(s,L">",L"");
 
   return s;
 }
@@ -171,22 +174,22 @@ Utils::ftoa(double f) {
   return str;
 }
 
-string 
-Utils::get_tag_value(string tags, string values) {
-  vector<string> pval=split_string(values,"|");
+wstring 
+Utils::get_tag_value(wstring tags, wstring values) {
+  vector<wstring> pval=split_string(values,L"|");
 
   for(unsigned i=0; i<pval.size(); i++) {
     if (tags.find(pval[i]) != string::npos)
       return pval[i];
   }
 
-  return "";
+  return L"";
 }
 
 bool 
-Utils::case_insensitive_equal(const string& a, const string& b) {
-  string alower="";
-  string blower="";
+Utils::case_insensitive_equal(const wstring& a, const wstring& b) {
+  wstring alower=L"";
+  wstring blower=L"";
 
   for(unsigned i=0; i<a.length(); i++) {
     alower+=tolower(a[i]);
@@ -199,9 +202,9 @@ Utils::case_insensitive_equal(const string& a, const string& b) {
   return (alower==blower);
 }
 
-string
-Utils::strtolower(const string& s) {
-  string l="";
+wstring
+Utils::strtolower(const wstring& s) {
+  wstring l=L"";
   for(unsigned i=0; i<s.length(); i++)
     l+=tolower(s[i]);
   return l;
