@@ -167,11 +167,11 @@ int main(int argc, char* argv[]) {
   cerr<<"Aligments to operate with come from files '"<<al1_file<<"' and '"<<al2_file<<"'\n";
 
 
-  istream *fal1;
+  wistream *fal1;
   if (use_zlib) {
     fal1 = new gzifstream(al1_file.c_str());
   }  else {
-    fal1 = new ifstream(al1_file.c_str());
+    fal1 = new wifstream(al1_file.c_str());
   }
 
   if (fal1->fail()) {
@@ -180,11 +180,11 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  istream *fal2;
+  wistream *fal2;
   if (use_zlib) {
     fal2 = new gzifstream(al2_file.c_str());
   }  else {
-    fal2 = new ifstream(al2_file.c_str());
+    fal2 = new wifstream(al2_file.c_str());
   }
 
   if (fal2->fail()) {
@@ -194,11 +194,11 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  ostream *fout;
+  wostream *fout;
   if(use_zlib) {
     fout = new gzofstream(alout_file.c_str());
   } else {
-    fout = new ofstream(alout_file.c_str());
+    fout = new wofstream(alout_file.c_str());
   }
 
   if (fout->fail()) {
@@ -214,8 +214,8 @@ int main(int argc, char* argv[]) {
   start_time=time(NULL);
   cerr<<"Alignment "<<operation<<" started at: "<<ctime(&start_time);
 
-  string al1;
-  string al2;
+  wstring al1;
+  wstring al2;
 
   long nal=0;
 
