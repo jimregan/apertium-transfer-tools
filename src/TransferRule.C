@@ -110,7 +110,7 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
   //each AT. Consequently, there's one <when> statement per AT 
   for(unsigned i=0; i<ats.size(); i++) {
     rule+=L"      <when>";
-    rule+=L"<!--"+ats[i].to_string()+L"-->\n";
+    rule+=L"<!--"+ats[i].to_wstring()+L"-->\n";
     rule+=L"        <test>\n";
 
     int nconditions=0;
@@ -155,7 +155,7 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
     rule+=L"        </test>\n";
 
     if (debug) {
-      wstring s=StringUtils::substitute(ats[i].to_string(), L"><", L".");
+      wstring s=StringUtils::substitute(ats[i].to_wstring(), L"><", L".");
       s=StringUtils::substitute(s,L"<",L"-");
       s=StringUtils::substitute(s,L">",L"");
       rule+=L"        <out>\n";

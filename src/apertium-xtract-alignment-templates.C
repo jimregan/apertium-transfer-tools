@@ -197,11 +197,11 @@ int main(int argc, char* argv[]) {
   fstp.initBiltrans();
   fclose(fbil_dic);
 
-  istream *fbil;
+  wistream *fbil;
   if (use_zlib) {
     fbil = new gzifstream(phrases_file.c_str());
   }  else {
-    fbil = new ifstream(phrases_file.c_str());
+    fbil = new wifstream(phrases_file.c_str());
   }
 
   if (fbil->fail()) {
@@ -210,11 +210,11 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  ostream *fout;
+  wostream *fout;
   if(use_zlib) {
     fout = new gzofstream(at_file.c_str());
   } else {
-    fout = new ofstream(at_file.c_str());
+    fout = new wofstream(at_file.c_str());
   }
 
   if (fout->fail()) {
@@ -229,7 +229,7 @@ int main(int argc, char* argv[]) {
   start_time=time(NULL);
   cerr<<"Alignment templates extraction started at: "<<ctime(&start_time);
 
-  string onealg;
+  wstring onealg;
 
   double nbilph=0.0;
   double ndiscarded_bilph=0.0;
@@ -254,9 +254,9 @@ int main(int argc, char* argv[]) {
 	  ndiscarded_bilph+=1.0;
           if (at.invalid_reason() == AlignmentTemplate::INVALID_WRONG_OPEN_WORDS) {
 	    ndiscarded_wrong_open_words+=1.0;
-	    cerr<<"Warning: AT discarded due to wrong alignments: ";
-	    cerr<<bil_phrase.to_string()<<"\n";
-            cerr<<at<<"\n";
+	    wcerr<<L"Warning: AT discarded due to wrong alignments: ";
+	    wcerr<<bil_phrase.to_wstring()<<L"\n";
+            wcerr<<at<<L"\n";
 	  } else if (at.invalid_reason() == AlignmentTemplate::INVALID_NO_OK_TRANSLATIONS)
 	    ndiscarded_not_reproducible+=1.0;
 	  else if (at.invalid_reason() == AlignmentTemplate::INVALID_DIFFERENT_TRANSLATIONS)
@@ -269,34 +269,34 @@ int main(int argc, char* argv[]) {
       } else {
 	ndiscarded_bilph+=1.0;
 	ndiscarded_invalid_alignment+=1.0;
-	cerr<<"Warning: Bilingual phrase discarded due to end words not aligned: ";
-	cerr<<bil_phrase.to_string()<<"\n";
+	wcerr<<L"Warning: Bilingual phrase discarded due to end words not aligned: ";
+	wcerr<<bil_phrase.to_wstring()<<L"\n";
       }
 
       if ((((int)nbilph)%100000)==0)
-	cerr<<nbilph<<" bilingual phrases processed\n";
+	wcerr<<nbilph<<L" bilingual phrases processed\n";
     }
   }
 
   end_time=time(NULL);
-  cerr<<"Alignment templates extraction finished at: "<<ctime(&end_time)<<"\n";
-  cerr<<"Alignment templates extraction took "<<difftime(end_time, start_time)<<" seconds\n";
+  wcerr<<L"Alignment templates extraction finished at: "<<ctime(&end_time)<<L"\n";
+  wcerr<<L"Alignment templates extraction took "<<difftime(end_time, start_time)<<L" seconds\n";
 
-  cerr<<"Number of bilingual phrases read: "<<nbilph<<"\n";
-  cerr<<"Number of bilingual phrases discarded: "<<ndiscarded_bilph<<" ";
-  cerr<<"("<<(ndiscarded_bilph/nbilph)*100.0<<" %)\n";
+  wcerr<<L"Number of bilingual phrases read: "<<nbilph<<L"\n";
+  wcerr<<L"Number of bilingual phrases discarded: "<<ndiscarded_bilph<<L" ";
+  wcerr<<L"("<<(ndiscarded_bilph/nbilph)*100.0<<L" %)\n";
 
-  cerr<<"Number of bilingual phrases discarded because (over the number of discarded):\n";
-  cerr<<"   alignments not valid: "<<ndiscarded_invalid_alignment<<" ";
-  cerr<<"("<<(ndiscarded_invalid_alignment/ndiscarded_bilph)*100.0<<" %)\n";
-  cerr<<"   wrong open words alignments: "<<ndiscarded_wrong_open_words<<" ";
-  cerr<<"("<<(ndiscarded_wrong_open_words/ndiscarded_bilph)*100.0<<" %)\n";
-  cerr<<"   bil. ph. not reproducible: "<<ndiscarded_not_reproducible<<" ";
-  cerr<<"("<<(ndiscarded_not_reproducible/ndiscarded_bilph)*100.0<<" %)\n";
-  cerr<<"   not equal cat: "<<ndiscarded_not_equal_cat<<" ";
-  cerr<<"("<<(ndiscarded_not_equal_cat/ndiscarded_bilph)*100.0<<" %)\n";
-  cerr<<"   equivalent to word for word: "<<ndiscarded_equivalent_word4word<<" ";
-  cerr<<"("<<(ndiscarded_equivalent_word4word/ndiscarded_bilph)*100.0<<" %)\n";
+  wcerr<<L"Number of bilingual phrases discarded because (over the number of discarded):\n";
+  wcerr<<L"   alignments not valid: "<<ndiscarded_invalid_alignment<<L" ";
+  wcerr<<L"("<<(ndiscarded_invalid_alignment/ndiscarded_bilph)*100.0<<L" %)\n";
+  wcerr<<L"   wrong open words alignments: "<<ndiscarded_wrong_open_words<<L" ";
+  wcerr<<L"("<<(ndiscarded_wrong_open_words/ndiscarded_bilph)*100.0<<L" %)\n";
+  wcerr<<L"   bil. ph. not reproducible: "<<ndiscarded_not_reproducible<<L" ";
+  wcerr<<L"("<<(ndiscarded_not_reproducible/ndiscarded_bilph)*100.0<<L" %)\n";
+  wcerr<<L"   not equal cat: "<<ndiscarded_not_equal_cat<<L" ";
+  wcerr<<L"("<<(ndiscarded_not_equal_cat/ndiscarded_bilph)*100.0<<L" %)\n";
+  wcerr<<L"   equivalent to word for word: "<<ndiscarded_equivalent_word4word<<L" ";
+  wcerr<<L"("<<(ndiscarded_equivalent_word4word/ndiscarded_bilph)*100.0<<L" %)\n";
 
   double ndiscarded_rest=ndiscarded_bilph-(ndiscarded_invalid_alignment +
                                            ndiscarded_wrong_open_words +
@@ -304,8 +304,8 @@ int main(int argc, char* argv[]) {
                                            ndiscarded_not_equal_cat +
                                            ndiscarded_equivalent_word4word);
 
-  cerr<<"   rest:"<<ndiscarded_rest<<" ";
-  cerr<<"   ("<<(ndiscarded_rest/ndiscarded_bilph)*100.0<<" %)\n";
+  wcerr<<L"   rest:"<<ndiscarded_rest<<L" ";
+  wcerr<<L"   ("<<(ndiscarded_rest/ndiscarded_bilph)*100.0<<L" %)\n";
 
   delete fbil;
   delete fout;

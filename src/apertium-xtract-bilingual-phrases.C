@@ -147,11 +147,11 @@ int main(int argc, char* argv[]) {
   cerr<<"Bilingual phrases will be writen to file '"<<phrases_file<<"'\n";
   cerr<<"Bilingual phrases length will be between "<<min<<" and "<<max<<" words.\n\n";
   
-  istream *falg;
+  wistream *falg;
   if (use_zlib) {
     falg = new gzifstream(alignments_file.c_str());
   }  else {
-    falg = new ifstream(alignments_file.c_str());
+    falg = new wifstream(alignments_file.c_str());
   }
 
   if (falg->fail()) {
@@ -160,11 +160,11 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  ostream *fout;
+  wostream *fout;
   if(use_zlib) {
     fout = new gzofstream(phrases_file.c_str());
   } else {
-    fout = new ofstream(phrases_file.c_str());
+    fout = new wofstream(phrases_file.c_str());
   }
 
   if (fout->fail()) {
@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
   start_time=time(NULL);
   cerr<<"Bilingual phrases extraction started at: "<<ctime(&start_time);
   vector<Alignment> bilingual_phrases;
-  string onealg;
+  wstring onealg;
   while (!falg->eof()) {
     getline(*falg,onealg);
     if(onealg.length()>0) {

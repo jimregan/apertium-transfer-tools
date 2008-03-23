@@ -78,6 +78,10 @@ class Utils {
   
   static string ftoa(double f);
 
+  static double wtod(wstring s);
+
+  static long wtol(wstring s);
+
   static wstring strtolower(const wstring& s);
 
   static bool case_insensitive_equal(const wstring& a, const wstring& b);
