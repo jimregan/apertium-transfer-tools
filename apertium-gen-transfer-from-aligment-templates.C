@@ -154,11 +154,11 @@ int main(int argc, char* argv[]) {
   }
 
   
-  istream *fin;
+  wistream *fin;
   if (use_zlib) {
     fin = new gzifstream(at_file.c_str());
   }  else {
-    fin = new ifstream(at_file.c_str());
+    fin = new wifstream(at_file.c_str());
   }
 
   if (fin->fail()) {
@@ -178,8 +178,8 @@ int main(int argc, char* argv[]) {
 
   cerr<<"Debug: "<<debug<<"\n";
 
-  string oneat;
-  string all_rules="";
+  wstring oneat;
+  wstring all_rules=L"";
 
   int ndiscarded=0;
   int nrules=0;
@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
 	  delete tr;
 	  tr=new TransferRule;
 	  if (!(tr->add_alignment_template(at))) {
-	    cerr<<"Error when adding an AT to an emty transfer rule\n";
+	    cerr<<"Error when adding an AT to an empty transfer rule\n";
 	    cerr<<"This shoud never happend\n";
 	    exit(EXIT_FAILURE);
 	  }
@@ -227,9 +227,9 @@ int main(int argc, char* argv[]) {
   delete tr;
   delete fin;
 
-  cout<<TransferRule::gen_apertium_transfer_head(debug);
-  cout<<all_rules;
-  cout<<TransferRule::gen_apertium_transfer_foot(debug);
+  wcout<<TransferRule::gen_apertium_transfer_head(debug);
+  wcout<<all_rules;
+  wcout<<TransferRule::gen_apertium_transfer_foot(debug);
 
   cerr<<ndiscarded<<" alignment templates were discarded because their counts were below the minimum allowed\n";
   cerr<<nrules<<" transfer rules were generated\n";

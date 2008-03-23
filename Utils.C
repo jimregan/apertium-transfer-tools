@@ -174,6 +174,18 @@ Utils::ftoa(double f) {
   return str;
 }
 
+double
+Utils::wtod(wstring s)
+{
+  return wcstod (s.c_str(), (wchar_t **)s.c_str()+s.size());
+}
+
+long
+Utils::wtol(wstring s)
+{
+  return wcstol (s.c_str(), (wchar_t **)s.c_str()+s.size(), 0);
+} 
+
 wstring 
 Utils::get_tag_value(wstring tags, wstring values) {
   vector<wstring> pval=StringUtils::split_wstring(values,L"|");

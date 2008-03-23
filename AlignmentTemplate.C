@@ -181,8 +181,8 @@ AlignmentTemplate::xtract_alignment_template(Alignment& al, FSTProcessor& fstp) 
 
   //Determine the word class for each target word
   for(unsigned i=0; i<al.target.size(); i++) {
-    string w=Utils::remove_begin_and_end_marks(al.target[i]);
-    string wclass;
+    wstring w=Utils::remove_begin_and_end_marks(al.target[i]);
+    wstring wclass;
 
     if (Utils::is_unknown_word(w))
       wclass=L"__UNKNOWN__";

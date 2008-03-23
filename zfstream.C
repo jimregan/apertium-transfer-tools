@@ -247,7 +247,7 @@ gzfilebuf::int_type gzfilebuf::overflow(int_type c)
 }
 
 // Assign new buffer
-std::streambuf* gzfilebuf::setbuf(char_type* p, std::streamsize n)
+std::wstreambuf* gzfilebuf::setbuf(char_type* p, std::streamsize n)
 {
   // First make sure stuff is sync'ed, for safety
   if (this->sync() == -1)
@@ -345,9 +345,9 @@ void gzfilebuf::disable_buffer()
 }
 
 #include <iostream>
-streambuf::pos_type gzfilebuf::seekoff(off_type off, std::ios_base::seekdir way, std::ios_base::openmode mode)
+wstreambuf::pos_type gzfilebuf::seekoff(off_type off, std::ios_base::seekdir way, std::ios_base::openmode mode)
 {
-  istream::pos_type ret = pos_type(off_type(-1));
+  wistream::pos_type ret = pos_type(off_type(-1));
   if (this->is_open())
     {
       // Clean buffers
@@ -382,9 +382,9 @@ streambuf::pos_type gzfilebuf::seekoff(off_type off, std::ios_base::seekdir way,
   return ret;
 }
 
-streambuf::pos_type gzfilebuf::seekpos(streambuf::pos_type sp, std::ios_base::openmode mode)
+wstreambuf::pos_type gzfilebuf::seekpos(wstreambuf::pos_type sp, std::ios_base::openmode mode)
 {
-  istream::pos_type ret = pos_type(off_type(-1));
+  wistream::pos_type ret = pos_type(off_type(-1));
   if (this->is_open())
     ret = pos_type(off_type((long)gzseek(file, (z_off_t)sp, SEEK_SET)));
   return ret;
@@ -395,20 +395,20 @@ streambuf::pos_type gzfilebuf::seekpos(streambuf::pos_type sp, std::ios_base::op
  */
 
 // Default constructor initializes stream buffer
-gzifstream::gzifstream() : std::istream(NULL), sb()
+gzifstream::gzifstream() : std::wistream(NULL), sb()
 {
   this->init(&sb);
 }
 
 // Initialize stream buffer and open file
-gzifstream::gzifstream(const char* name, std::ios_base::openmode mode) : std::istream(NULL), sb()
+gzifstream::gzifstream(const char* name, std::ios_base::openmode mode) : std::wistream(NULL), sb()
 {
   this->init(&sb);
   this->open(name, mode);
 }
 
 // Initialize stream buffer and attach to file
-gzifstream::gzifstream(int fd, std::ios_base::openmode mode) : std::istream(NULL), sb()
+gzifstream::gzifstream(int fd, std::ios_base::openmode mode) : std::wistream(NULL), sb()
 {
   this->init(&sb);
   this->attach(fd, mode);
@@ -444,20 +444,20 @@ void gzifstream::close()
  */
 
 // Default constructor initializes stream buffer
-gzofstream::gzofstream() : std::ostream(NULL), sb()
+gzofstream::gzofstream() : std::wostream(NULL), sb()
 {
   this->init(&sb);
 }
 
 // Initialize stream buffer and open file
-gzofstream::gzofstream(const char* name, std::ios_base::openmode mode) : std::ostream(NULL), sb()
+gzofstream::gzofstream(const char* name, std::ios_base::openmode mode) : std::wostream(NULL), sb()
 {
   this->init(&sb);
   this->open(name, mode);
 }
 
 // Initialize stream buffer and attach to file
-gzofstream::gzofstream(int fd, std::ios_base::openmode mode) : std::ostream(NULL), sb()
+gzofstream::gzofstream(int fd, std::ios_base::openmode mode) : std::wostream(NULL), sb()
 {
   this->init(&sb);
   this->attach(fd, mode);

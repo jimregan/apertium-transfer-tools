@@ -16,7 +16,7 @@
 
 using namespace std;
 
-class gzfilebuf : public std::streambuf
+class gzfilebuf : public std::wstreambuf
 {
 	public:
 		// Constructor and destructor
@@ -35,7 +35,7 @@ class gzfilebuf : public std::streambuf
 		virtual std::streamsize showmanyc();
 		virtual int_type underflow();
 		virtual int_type overflow(int_type c = traits_type::eof());
-		virtual std::streambuf* setbuf(char_type* p, std::streamsize n);
+		virtual std::wstreambuf* setbuf(char_type* p, std::streamsize n);
 		virtual int sync();
 		virtual pos_type seekoff(off_type off, std::ios_base::seekdir way, std::ios_base::openmode mode = std::ios_base::in|std::ios_base::out);
 		virtual pos_type seekpos(pos_type sp, std::ios_base::openmode mode = std::ios_base::in|std::ios_base::out);
@@ -69,7 +69,7 @@ class gzfilebuf : public std::streambuf
 
 /*****************************************************************************/
 
-class gzifstream : public std::istream
+class gzifstream : public std::wistream
 {
 	public:
 		// Constructor and destructor
@@ -88,7 +88,7 @@ class gzifstream : public std::istream
 };
 
 /*****************************************************************************/
-class gzofstream : public std::ostream
+class gzofstream : public std::wostream
 {
 	public:
 		// Constructors and destructor
