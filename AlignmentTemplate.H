@@ -105,13 +105,13 @@ public:
    */
   bool is_equivalent_to_word_for_word(Alignment& al, FSTProcessor& fstp);
 
-  wstring to_string();
+  wstring to_wstring();
 
   static void set_lexicalized_words(const LexicalizedWords& scw, const LexicalizedWords& tcw);
 
   static AlignmentTemplate xtract_alignment_template(Alignment& al, FSTProcessor& fstp);
 
-  friend ostream& operator << (ostream& os, AlignmentTemplate& at);
+  friend wostream& operator << (wostream& os, AlignmentTemplate& at);
 
   friend class TransferRule;
   
