@@ -99,8 +99,8 @@ wstring
 Utils::get_lemma(wstring word) {
   wstring s=L"";
 
-  int p=word.find(L"<",0);
-  if (p!=(int)string::npos)
+  wstring::size_type p=word.find(L"<",0);
+  if (p!=wstring::npos)
     s=word.substr(0, p);
 
   return s;
@@ -111,8 +111,8 @@ Utils::get_lemma_without_queue(wstring word) {
   wstring l=get_lemma(word);
   wstring s=l;
 
-  int p=l.find(L"#",0);
-  if (p!=(int)string::npos)
+  wstring::size_type p=l.find(L"#",0);
+  if (p!=wstring::npos)
     s=l.substr(0, p);
 
   return s;
@@ -123,8 +123,8 @@ Utils::get_queue(wstring word) {
   wstring l=get_lemma(word);
   wstring s=L"";
 
-  int p=l.find(L"#",0);
-  if (p!=(int)string::npos)
+  wstring::size_type p=l.find(L"#",0);
+  if (p!=wstring::npos)
     s=l.substr(p);
 
   return s;
@@ -132,8 +132,8 @@ Utils::get_queue(wstring word) {
 
 wstring
 Utils::get_tags(wstring word) {
-  int p=word.find(L"<",0);
-  if (p!=(int)string::npos)
+  wstring::size_type p=word.find(L"<",0);
+  if (p!=wstring::npos)
     return word.substr(p, word.size()-p);
   else //Unknown word, no tags for it
     return L"";
@@ -191,7 +191,7 @@ Utils::get_tag_value(wstring tags, wstring values) {
   vector<wstring> pval=StringUtils::split_wstring(values,L"|");
 
   for(unsigned i=0; i<pval.size(); i++) {
-    if (tags.find(pval[i]) != string::npos)
+    if (tags.find(pval[i]) != wstring::npos)
       return pval[i];
   }
 

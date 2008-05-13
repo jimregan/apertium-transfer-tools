@@ -98,7 +98,7 @@ bool merge_and_print_mlu(vector<vector<wstring> >& mlu, deque<pair<wstring, wstr
       if (is_mlu) {
 	for(unsigned j=0; j<mlu[i].size(); j++) {
 	  //Only if format information is present
-	  if ((j==0) || (buffer[j].first.find(L"[")!=string::npos))
+	  if ((j==0) || (buffer[j].first.find(L"[")!=wstring::npos))
 	    wcout<<buffer[j].first;
 	}
 
