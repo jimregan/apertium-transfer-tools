@@ -104,8 +104,8 @@ PTXReader::proc_lu(vector<wstring>& one_mlu) {
   else if (tags[0]=='*')
     parseError(L"mandatory attribute 'tags' cannot start with '*'");
   
-  unsigned p=tags.find(L"*",0);
-  if ((p!=static_cast<unsigned int>(string::npos)) && (p!=(tags.size()-1)))
+  wstring::size_type p=tags.find(L"*",0);
+  if ((p!=wstring::npos) && (p!=(tags.size()-1)))
      parseError(L"mandatory attribute 'tags' cannot cannot have a '*' in the middle");
 
   tags=StringUtils::substitute(tags, L".*",L"");
