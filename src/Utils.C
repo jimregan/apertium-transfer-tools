@@ -190,7 +190,7 @@ wstring
 Utils::get_tag_value(wstring tags, wstring values) {
   vector<wstring> pval=StringUtils::split_wstring(values,L"|");
 
-  for(unsigned i=0; i<pval.size(); i++) {
+  for(wstring::size_type i=0; i<pval.size(); i++) {
     if (tags.find(pval[i]) != wstring::npos)
       return pval[i];
   }
