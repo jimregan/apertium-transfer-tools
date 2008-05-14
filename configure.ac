@@ -102,14 +102,14 @@ fi
 #AC_PATH_PROG(APERTIUM_DESTXT, apertium-destxt, no)
 
 
-AC_PATH_PROG(AWK, awk, no)
+AC_PATH_PROG(AWK, gawk, no)
 if test x$ac_cv_path_AWK = x
 then
-  AC_MSG_ERROR([You don't have awk installed.])
+  AC_MSG_ERROR([You don't have gawk installed.])
 fi
 if test x$ac_cv_path_AWK = xno
 then
-  AC_MSG_ERROR([You don't have awk installed.])
+  AC_MSG_ERROR([You don't have gawk installed.])
 fi
 
 AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
