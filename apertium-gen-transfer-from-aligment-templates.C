@@ -28,7 +28,7 @@
 #include "AlignmentTemplate.H"
 #include "TransferRule.H"
 //#include "zfstream.H"
-#include "zipstream.hpp"
+#include "zipstream.ipp"
 #include <cmath>
 
 using namespace std;

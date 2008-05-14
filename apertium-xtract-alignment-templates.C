@@ -32,7 +32,7 @@
 #include "ATXReader.H"
 #include "LexicalizedWords.H"
 #include "AlignmentTemplate.H"
-#include "zipstream.hpp"
+#include "zipstream.ipp"
 
 
 using namespace std;
