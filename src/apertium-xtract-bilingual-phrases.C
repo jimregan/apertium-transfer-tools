@@ -26,7 +26,7 @@
 
 #include "configure.H"
 #include "Alignment.H"
-#include "zipstream.hpp"
+#include "zipstream.ipp"
 
 using namespace std;
 
