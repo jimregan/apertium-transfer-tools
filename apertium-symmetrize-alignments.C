@@ -27,7 +27,7 @@
 
 #include "configure.H"
 #include "Alignment.H"
-#include "zfstream.H"
+#include "zipstream.hpp"
 
 using namespace std;
 
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
 
   wistream *fal1;
   if (use_zlib) {
-    fal1 = new gzifstream(al1_file.c_str());
+    fal1 = new zip_wistream(al1_file.c_str());
   }  else {
     fal1 = new wifstream(al1_file.c_str());
   }
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
 
   wistream *fal2;
   if (use_zlib) {
-    fal2 = new gzifstream(al2_file.c_str());
+    fal2 = new zip_wistream(al2_file.c_str());
   }  else {
     fal2 = new wifstream(al2_file.c_str());
   }
@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
 
   wostream *fout;
   if(use_zlib) {
-    fout = new gzofstream(alout_file.c_str());
+    fout = new zip_wostream(alout_file.c_str());
   } else {
     fout = new wofstream(alout_file.c_str());
   }

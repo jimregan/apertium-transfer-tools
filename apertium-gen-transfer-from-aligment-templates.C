@@ -27,7 +27,8 @@
 #include "configure.H"
 #include "AlignmentTemplate.H"
 #include "TransferRule.H"
-#include "zfstream.H"
+//#include "zfstream.H"
+#include "zipstream.hpp"
 #include <cmath>
 
 using namespace std;
@@ -156,7 +157,7 @@ int main(int argc, char* argv[]) {
   
   wistream *fin;
   if (use_zlib) {
-    fin = new gzifstream(at_file.c_str());
+    fin = new zip_wistream(at_file.c_str());
   }  else {
     fin = new wifstream(at_file.c_str());
   }

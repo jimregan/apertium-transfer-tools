@@ -32,7 +32,7 @@
 #include "ATXReader.H"
 #include "LexicalizedWords.H"
 #include "AlignmentTemplate.H"
-#include "zfstream.H"
+#include "zipstream.hpp"
 
 
 using namespace std;
@@ -199,7 +199,7 @@ int main(int argc, char* argv[]) {
 
   wistream *fbil;
   if (use_zlib) {
-    fbil = new gzifstream(phrases_file.c_str());
+    fbil = new zip_wistream(phrases_file.c_str());
   }  else {
     fbil = new wifstream(phrases_file.c_str());
   }
@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
 
   wostream *fout;
   if(use_zlib) {
-    fout = new gzofstream(at_file.c_str());
+    fout = new zip_wostream(at_file.c_str());
   } else {
     fout = new wofstream(at_file.c_str());
   }
