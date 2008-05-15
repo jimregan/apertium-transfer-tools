@@ -111,7 +111,7 @@ void
 LexicalizedWords::insert_ends() {
   //Compile the global_regexp
   int res=regcomp(&compiled_global_regexp, 
-		  UtfConverter::toUtf8(global_regexp).c_str(), 
+		  UtfConverter::toUtf8(global_regexp.c_str()), 
 		  REG_EXTENDED | REG_ICASE | REG_NOSUB | REG_UTF8);
 
   if(res!=0) {
