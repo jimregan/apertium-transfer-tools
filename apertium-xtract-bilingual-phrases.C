@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
       for (unsigned i=0; i<bilingual_phrases.size(); i++) {
 	nbilph++;
 	//if(bilingual_phrases[i].allwords_aligned()) {
-	(*fout)<<UtfConverter::toUtf8(bilingual_phrases[i])<<"\n";
+	(*fout)<<bilingual_phrases[i]<<"\n";
 	//} else {
 	//  cerr<<"Warning: Bilingual phrase discarded due to words not aligned: ";
 	//  cerr<<bilingual_phrases[i].to_string()<<"\n";
