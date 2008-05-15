@@ -21,6 +21,7 @@
 #include "AlignmentTemplate.H"
 #include "Utils.H"
 #include <apertium/string_utils.h>
+#include <apertium/utf_converter.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -126,6 +127,11 @@ AlignmentTemplate::to_wstring() {
     s+=L" "+restrictions[i];
 
   return s;
+}
+
+ostream& operator << (ostream& os, AlignmentTemplate& at) {
+  os<<UtfConverter::toUtf8(at.to_wstring());
+  return os;
 }
 
 wostream& operator << (wostream& os, AlignmentTemplate& at) {

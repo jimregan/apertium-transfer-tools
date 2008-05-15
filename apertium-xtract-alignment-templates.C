@@ -250,7 +250,7 @@ int main(int argc, char* argv[]) {
 	AlignmentTemplate at=AlignmentTemplate::xtract_alignment_template(bil_phrase, fstp);
 
 	if (at.is_valid(equalcat, noword4word, fstp, bil_phrase)) {
-	  (*fout)<<UtfConverter::toUtf8(at)<<"\n";
+	  (*fout)<<at<<"\n";
 	} else {
 	  ndiscarded_bilph+=1.0;
           if (at.invalid_reason() == AlignmentTemplate::INVALID_WRONG_OPEN_WORDS) {

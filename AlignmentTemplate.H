@@ -111,6 +111,8 @@ public:
 
   static AlignmentTemplate xtract_alignment_template(Alignment& al, FSTProcessor& fstp);
 
+  friend ostream& operator << (ostream& os, AlignmentTemplate& at);
+
   friend wostream& operator << (wostream& os, AlignmentTemplate& at);
 
   friend class TransferRule;
