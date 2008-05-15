@@ -204,11 +204,11 @@ Utils::case_insensitive_equal(const wstring& a, const wstring& b) {
   wstring blower=L"";
 
   for(unsigned i=0; i<a.length(); i++) {
-    alower+=tolower(a[i]);
+    alower+=(wchar_t) towlower(a[i]);
   }
 
   for(unsigned i=0; i<b.length(); i++) {
-    blower+=tolower(b[i]);
+    blower+=(wchar_t) towlower(b[i]);
   }
 
   return (alower==blower);
@@ -218,7 +218,7 @@ wstring
 Utils::strtolower(const wstring& s) {
   wstring l=L"";
   for(unsigned i=0; i<s.length(); i++)
-    l+=tolower(s[i]);
+    l+=(wchar_t) towlower(s[i]);
   return l;
 }
 
