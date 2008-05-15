@@ -24,10 +24,11 @@
 #include <getopt.h>
 #include <ctime>
 #include <clocale>
+#include <apertium/utf_converter.h>
 
 #include "configure.H"
 #include "Alignment.H"
-#include "zipstream.ipp"
+#include "zfstream.H"
 
 using namespace std;
 
@@ -167,11 +168,11 @@ int main(int argc, char* argv[]) {
   cerr<<"Aligments to operate with come from files '"<<al1_file<<"' and '"<<al2_file<<"'\n";
 
 
-  wistream *fal1;
+  istream *fal1;
   if (use_zlib) {
-    fal1 = new zip_wistream(al1_file.c_str());
+    fal1 = new gzifstream(al1_file.c_str());
   }  else {
-    fal1 = new wifstream(al1_file.c_str());
+    fal1 = new ifstream(al1_file.c_str());
   }
 
   if (fal1->fail()) {
@@ -180,11 +181,11 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  wistream *fal2;
+  istream *fal2;
   if (use_zlib) {
-    fal2 = new zip_wistream(al2_file.c_str());
+    fal2 = new gzifstream(al2_file.c_str());
   }  else {
-    fal2 = new wifstream(al2_file.c_str());
+    fal2 = new ifstream(al2_file.c_str());
   }
 
   if (fal2->fail()) {
@@ -194,11 +195,11 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  wostream *fout;
+  ostream *fout;
   if(use_zlib) {
-    fout = new zip_wostream(alout_file.c_str());
+    fout = new gzofstream(alout_file.c_str());
   } else {
-    fout = new wofstream(alout_file.c_str());
+    fout = new ofstream(alout_file.c_str());
   }
 
   if (fout->fail()) {
@@ -214,8 +215,8 @@ int main(int argc, char* argv[]) {
   start_time=time(NULL);
   cerr<<"Alignment "<<operation<<" started at: "<<ctime(&start_time);
 
-  wstring al1;
-  wstring al2;
+  string al1;
+  string al2;
 
   long nal=0;
 
@@ -225,8 +226,8 @@ int main(int argc, char* argv[]) {
 
     if ((al1.length()>0) && (al2.length()>0)) {
       nal++;
-      Alignment alig1(al1);
-      Alignment alig2(al2);
+      Alignment alig1(UtfConverter::fromUtf8(al1));
+      Alignment alig2(UtfConverter::fromUtf8(al2));
 
       bool opok;
       if (operation=="union")

@@ -26,13 +26,14 @@
 #include <clocale>
 
 #include <lttoolbox/fst_processor.h>
+#include <apertium/utf_converter.h>
 
 #include "configure.H"
 #include "Alignment.H"
 #include "ATXReader.H"
 #include "LexicalizedWords.H"
 #include "AlignmentTemplate.H"
-#include "zipstream.ipp"
+#include "zfstream.H"
 
 
 using namespace std;
@@ -197,11 +198,11 @@ int main(int argc, char* argv[]) {
   fstp.initBiltrans();
   fclose(fbil_dic);
 
-  wistream *fbil;
+  istream *fbil;
   if (use_zlib) {
-    fbil = new zip_wistream(phrases_file.c_str());
+    fbil = new gzifstream(phrases_file.c_str());
   }  else {
-    fbil = new wifstream(phrases_file.c_str());
+    fbil = new ifstream(phrases_file.c_str());
   }
 
   if (fbil->fail()) {
@@ -210,11 +211,11 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  wostream *fout;
+  ostream *fout;
   if(use_zlib) {
-    fout = new zip_wostream(at_file.c_str());
+    fout = new gzofstream(at_file.c_str());
   } else {
-    fout = new wofstream(at_file.c_str());
+    fout = new ofstream(at_file.c_str());
   }
 
   if (fout->fail()) {
@@ -229,7 +230,7 @@ int main(int argc, char* argv[]) {
   start_time=time(NULL);
   cerr<<"Alignment templates extraction started at: "<<ctime(&start_time);
 
-  wstring onealg;
+  string onealg;
 
   double nbilph=0.0;
   double ndiscarded_bilph=0.0;
@@ -243,13 +244,13 @@ int main(int argc, char* argv[]) {
     getline(*fbil,onealg);
     if(onealg.length()>0) {
       nbilph+=1.0;
-      Alignment bil_phrase(onealg);
+      Alignment bil_phrase(UtfConverter::fromUtf8(onealg));
 
       if (bil_phrase.all_end_words_aligned()) {
 	AlignmentTemplate at=AlignmentTemplate::xtract_alignment_template(bil_phrase, fstp);
 
 	if (at.is_valid(equalcat, noword4word, fstp, bil_phrase)) {
-	  (*fout)<<at<<"\n";
+	  (*fout)<<UtfConverter::toUtf8(at)<<"\n";
 	} else {
 	  ndiscarded_bilph+=1.0;
           if (at.invalid_reason() == AlignmentTemplate::INVALID_WRONG_OPEN_WORDS) {

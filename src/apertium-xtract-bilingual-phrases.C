@@ -23,10 +23,11 @@
 #include <string>
 #include <getopt.h>
 #include <ctime>
+#include <apertium/utf_converter.h>
 
 #include "configure.H"
 #include "Alignment.H"
-#include "zipstream.ipp"
+#include "zfstream.H"
 
 using namespace std;
 
@@ -147,11 +148,11 @@ int main(int argc, char* argv[]) {
   cerr<<"Bilingual phrases will be writen to file '"<<phrases_file<<"'\n";
   cerr<<"Bilingual phrases length will be between "<<min<<" and "<<max<<" words.\n\n";
   
-  wistream *falg;
+  istream *falg;
   if (use_zlib) {
-    falg = new zip_wistream(alignments_file.c_str());
+    falg = new gzifstream(alignments_file.c_str());
   }  else {
-    falg = new wifstream(alignments_file.c_str());
+    falg = new ifstream(alignments_file.c_str());
   }
 
   if (falg->fail()) {
@@ -160,11 +161,11 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  wostream *fout;
+  ostream *fout;
   if(use_zlib) {
-    fout = new zip_wostream(phrases_file.c_str());
+    fout = new gzofstream(phrases_file.c_str());
   } else {
-    fout = new wofstream(phrases_file.c_str());
+    fout = new ofstream(phrases_file.c_str());
   }
 
   if (fout->fail()) {
@@ -184,11 +185,11 @@ int main(int argc, char* argv[]) {
   start_time=time(NULL);
   cerr<<"Bilingual phrases extraction started at: "<<ctime(&start_time);
   vector<Alignment> bilingual_phrases;
-  wstring onealg;
+  string onealg;
   while (!falg->eof()) {
     getline(*falg,onealg);
     if(onealg.length()>0) {
-      Alignment al(onealg);
+      Alignment al(UtfConverter::fromUtf8(onealg));
       nalig++;
       //if(al.allwords_aligned()) {
       bilingual_phrases=al.extract_bilingual_phrases(min, max);
@@ -196,7 +197,7 @@ int main(int argc, char* argv[]) {
       for (unsigned i=0; i<bilingual_phrases.size(); i++) {
 	nbilph++;
 	//if(bilingual_phrases[i].allwords_aligned()) {
-	(*fout)<<bilingual_phrases[i]<<"\n";
+	(*fout)<<UtfConverter::tiUtf8(bilingual_phrases[i])<<"\n";
 	//} else {
 	//  cerr<<"Warning: Bilingual phrase discarded due to words not aligned: ";
 	//  cerr<<bilingual_phrases[i].to_string()<<"\n";
