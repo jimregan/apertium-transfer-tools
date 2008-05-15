@@ -33,7 +33,6 @@
 #include "ATXReader.H"
 #include "LexicalizedWords.H"
 #include "AlignmentTemplate.H"
-#include "zfstream.H"
 
 
 using namespace std;
@@ -41,7 +40,7 @@ using namespace std;
 
 void help(char *name) {
   cerr<<"USAGE:\n";
-  cerr<<name<<" --atx file.atx --bil bildic --input phrases --output alignment_templates [--equalcat] [--noword4word] [--gzip]\n\n";
+  cerr<<name<<" --atx file.atx --bil bildic --input phrases --output alignment_templates [--equalcat] [--noword4word] \n\n";
   cerr<<"ARGUMENTS: \n"
       <<"   --atx|-x: Specify a file with the alignment-template extractor's configuration\n"
       <<"   --bil|-b: Specify the bilingual dictionary (in binary format) to be used\n"
@@ -49,7 +48,6 @@ void help(char *name) {
       <<"   --output|-o: Specify the file in which the extracted alignment templates must be writen\n"
       <<"   --equalcat|-e: Discard alignment templates if aligned open words differ at the first tag\n"
       <<"   --noword4word|-w: Discard alignment templates which are equivalent to word-for-word translation\n"
-      <<"   --gzip|-z: Tell the program that the input file is gziped, the output will be gziped too\n"
       <<"   --help|-h: Show this help\n"
       <<"   --version|-v: Show version information\n";
 }
@@ -62,7 +60,6 @@ int main(int argc, char* argv[]) {
   string at_file="";
   string atx_file="";
   string bil_dic="";
-  bool use_zlib=false;
   bool equalcat=false;
   bool noword4word=false;
 
@@ -83,13 +80,12 @@ int main(int argc, char* argv[]) {
 	{"output",  required_argument,  0, 'o'},
 	{"equalcat",      no_argument,  0, 'e'},
         {"noword4word",   no_argument,  0, 'w'},
-	{"gzip",          no_argument,  0, 'z'},
 	{"help",          no_argument,  0, 'h'},
 	{"version",       no_argument,  0, 'v'},
 	{0, 0, 0, 0}
       };
 
-    c=getopt_long(argc, argv, "x:b:i:o:ewzhv",long_options, &option_index);
+    c=getopt_long(argc, argv, "x:b:i:o:ewhv",long_options, &option_index);
     if (c==-1)
       break;
       
@@ -111,9 +107,6 @@ int main(int argc, char* argv[]) {
       break;
     case 'w':
       noword4word=true;
-      break;
-    case 'z':
-      use_zlib=true;
       break;
     case 'h': 
       help(argv[0]);
@@ -198,12 +191,8 @@ int main(int argc, char* argv[]) {
   fstp.initBiltrans();
   fclose(fbil_dic);
 
-  istream *fbil;
-  if (use_zlib) {
-    fbil = new gzifstream(phrases_file.c_str());
-  }  else {
-    fbil = new ifstream(phrases_file.c_str());
-  }
+  wistream *fbil;
+  fbil = new wifstream(phrases_file.c_str());
 
   if (fbil->fail()) {
     cerr<<"Error: Cannot open input file '"<<phrases_file<<"'\n";
@@ -211,12 +200,8 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  ostream *fout;
-  if(use_zlib) {
-    fout = new gzofstream(at_file.c_str());
-  } else {
-    fout = new ofstream(at_file.c_str());
-  }
+  wostream *fout;
+  fout = new wofstream(at_file.c_str());
 
   if (fout->fail()) {
     cerr<<"Error: Cannot open output file '"<<at_file<<"'\n";
@@ -230,7 +215,7 @@ int main(int argc, char* argv[]) {
   start_time=time(NULL);
   cerr<<"Alignment templates extraction started at: "<<ctime(&start_time);
 
-  string onealg;
+  wstring onealg;
 
   double nbilph=0.0;
   double ndiscarded_bilph=0.0;
@@ -244,13 +229,13 @@ int main(int argc, char* argv[]) {
     getline(*fbil,onealg);
     if(onealg.length()>0) {
       nbilph+=1.0;
-      Alignment bil_phrase(UtfConverter::fromUtf8(onealg));
+      Alignment bil_phrase(onealg);
 
       if (bil_phrase.all_end_words_aligned()) {
 	AlignmentTemplate at=AlignmentTemplate::xtract_alignment_template(bil_phrase, fstp);
 
 	if (at.is_valid(equalcat, noword4word, fstp, bil_phrase)) {
-	  (*fout)<<at<<"\n";
+	  (*fout)<<at<<L"\n";
 	} else {
 	  ndiscarded_bilph+=1.0;
           if (at.invalid_reason() == AlignmentTemplate::INVALID_WRONG_OPEN_WORDS) {
