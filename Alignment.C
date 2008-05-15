@@ -21,6 +21,7 @@
 #include "Alignment.H"
 #include "Utils.H"
 #include <apertium/string_utils.h>
+#include <apertium/utf_converter.h>
 
 #include <cstdlib>
 #include <iostream>
