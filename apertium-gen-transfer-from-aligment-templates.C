@@ -24,11 +24,11 @@
 #include <ctime>
 #include <clocale>
 
+#include <apertium/utf_converter.h>
 #include "configure.H"
 #include "AlignmentTemplate.H"
 #include "TransferRule.H"
-//#include "zfstream.H"
-#include "zipstream.ipp"
+#include "zfstream.H"
 #include <cmath>
 
 using namespace std;
@@ -155,11 +155,11 @@ int main(int argc, char* argv[]) {
   }
 
   
-  wistream *fin;
+  istream *fin;
   if (use_zlib) {
-    fin = new zip_wistream(at_file.c_str());
+    fin = new gzifstream(at_file.c_str());
   }  else {
-    fin = new wifstream(at_file.c_str());
+    fin = new ifstream(at_file.c_str());
   }
 
   if (fin->fail()) {
@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
 
   cerr<<"Debug: "<<debug<<"\n";
 
-  wstring oneat;
+  string oneat;
   wstring all_rules=L"";
 
   int ndiscarded=0;
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
   while (!fin->eof()) {
     getline(*fin,oneat);
     if(oneat.length()>0) {
-      AlignmentTemplate at(oneat);
+      AlignmentTemplate at(UtfConverter::fromUtf8(oneat));
 
       double c;
       if (criterion=="prod")
@@ -228,9 +228,9 @@ int main(int argc, char* argv[]) {
   delete tr;
   delete fin;
 
-  wcout<<TransferRule::gen_apertium_transfer_head(debug);
-  wcout<<all_rules;
-  wcout<<TransferRule::gen_apertium_transfer_foot(debug);
+  cout<<UtfConverter::toUtf8(TransferRule::gen_apertium_transfer_head(debug));
+  cout<<UtfConverter::toUtf8(all_rules);
+  cout<<UtfConverter::toUtf8(TransferRule::gen_apertium_transfer_foot(debug));
 
   cerr<<ndiscarded<<" alignment templates were discarded because their counts were below the minimum allowed\n";
   cerr<<nrules<<" transfer rules were generated\n";
