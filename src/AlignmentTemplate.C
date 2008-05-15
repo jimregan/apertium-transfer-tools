@@ -130,7 +130,10 @@ AlignmentTemplate::to_wstring() {
 }
 
 ostream& operator << (ostream& os, AlignmentTemplate& at) {
-  os<<UtfConverter::toUtf8(at.to_wstring());
+  wstring w=at.to_wstring();
+  string s=UtfConverter::toUtf8(w);
+
+  os<<s;
   return os;
 }
 

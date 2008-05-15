@@ -255,7 +255,10 @@ Alignment::sub_alignment(int from_source, int to_source, int from_target, int to
 }
 
 ostream& operator << (ostream& os, Alignment& al) {
-  os<<UtfConverter::toUtf8(al.to_wstring());
+  wstring w = al.to_wstring();
+  string s=UtfConverter::toUtf8(w);
+
+  os<< s;
   return os;
 }
 
