@@ -86,6 +86,8 @@ public:
   //with at least one target word and vice versa
   bool all_end_words_aligned();
   
+  friend ostream& operator << (ostream& os, Alignment& al);
+
   friend wostream& operator << (wostream& os, Alignment& al);
 
   friend class AlignmentTemplate;
