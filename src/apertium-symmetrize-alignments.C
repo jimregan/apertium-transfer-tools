@@ -28,7 +28,6 @@
 
 #include "configure.H"
 #include "Alignment.H"
-#include "zfstream.H"
 
 using namespace std;
 
@@ -59,8 +58,6 @@ int main(int argc, char* argv[]) {
 
   string operation="";
 
-  bool use_zlib=false;
-
   cerr<<"Command line: ";
   for(int i=0; i<argc; i++)
     cerr<<argv[i]<<" ";
@@ -76,13 +73,12 @@ int main(int argc, char* argv[]) {
 	{"input2",    required_argument,  0, 'j'},
 	{"output",    required_argument,  0, 'o'},
 	{"operation", required_argument,  0, 'p'},
-	{"gzip",          no_argument,  0, 'z'},
 	{"help",          no_argument,  0, 'h'},
 	{"version",       no_argument,  0, 'v'},
 	{0, 0, 0, 0}
       };
 
-    c=getopt_long(argc, argv, "i:j:o:p:zhv",long_options, &option_index);
+    c=getopt_long(argc, argv, "i:j:o:p:hv",long_options, &option_index);
     if (c==-1)
       break;
       
@@ -98,9 +94,6 @@ int main(int argc, char* argv[]) {
       break;
     case 'p':
       operation=optarg;
-      break;
-    case 'z':
-      use_zlib=true;
       break;
     case 'h': 
       help(argv[0]);
@@ -168,12 +161,8 @@ int main(int argc, char* argv[]) {
   cerr<<"Aligments to operate with come from files '"<<al1_file<<"' and '"<<al2_file<<"'\n";
 
 
-  istream *fal1;
-  if (use_zlib) {
-    fal1 = new gzifstream(al1_file.c_str());
-  }  else {
-    fal1 = new ifstream(al1_file.c_str());
-  }
+  wistream *fal1;
+  fal1 = new wifstream(al1_file.c_str());
 
   if (fal1->fail()) {
     cerr<<"Error: Cannot open input file '"<<al1_file<<"'\n";
@@ -181,12 +170,8 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  istream *fal2;
-  if (use_zlib) {
-    fal2 = new gzifstream(al2_file.c_str());
-  }  else {
-    fal2 = new ifstream(al2_file.c_str());
-  }
+  wistream *fal2;
+  fal2 = new wifstream(al2_file.c_str());
 
   if (fal2->fail()) {
     cerr<<"Error: Cannot open input file '"<<al2_file<<"'\n";
@@ -195,12 +180,8 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  ostream *fout;
-  if(use_zlib) {
-    fout = new gzofstream(alout_file.c_str());
-  } else {
-    fout = new ofstream(alout_file.c_str());
-  }
+  wostream *fout;
+  fout = new wofstream(alout_file.c_str());
 
   if (fout->fail()) {
     cerr<<"Error: Cannot open output file '"<<alout_file<<"'\n";
@@ -215,8 +196,8 @@ int main(int argc, char* argv[]) {
   start_time=time(NULL);
   cerr<<"Alignment "<<operation<<" started at: "<<ctime(&start_time);
 
-  string al1;
-  string al2;
+  wstring al1;
+  wstring al2;
 
   long nal=0;
 
@@ -226,8 +207,8 @@ int main(int argc, char* argv[]) {
 
     if ((al1.length()>0) && (al2.length()>0)) {
       nal++;
-      Alignment alig1(UtfConverter::fromUtf8(al1));
-      Alignment alig2(UtfConverter::fromUtf8(al2));
+      Alignment alig1(al1);
+      Alignment alig2(al2);
 
       bool opok;
       if (operation=="union")
@@ -238,7 +219,7 @@ int main(int argc, char* argv[]) {
 	opok=alig1.refined_intersection(alig2);
 
       if (opok)
-	(*fout)<<alig1<<"\n";	
+	(*fout)<<alig1<<L"\n";	
       else 
 	cerr<<"Warning: the alignment at line "<<nal<<" will be discarded\n";
 
