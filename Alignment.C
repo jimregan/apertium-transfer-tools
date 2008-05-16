@@ -27,6 +27,8 @@
 #include <iostream>
 #include <cmath>
 
+#define DEBUG
+
 Alignment::Alignment() {
 }
 
@@ -115,8 +117,10 @@ Alignment::extract_bilingual_phrases(int min_length, int max_length) {
 
   for(unsigned i2=0; i2<target.size(); i2++) {
     for(unsigned i1=0; i1<=i2; i1++) {
-      //cerr<<"I2 "<<i2<<"\n";
-      //cerr<<"I1 "<<i1<<"\n";
+#ifdef DEBUG
+      cerr<<"I2 "<<i2<<"\n";
+      cerr<<"I1 "<<i1<<"\n";
+#endif
       set<int> SP;
       for(unsigned j=0; j<source.size(); j++) {
 	for(unsigned i=i1; i<=i2; i++) {
@@ -125,25 +129,33 @@ Alignment::extract_bilingual_phrases(int min_length, int max_length) {
 	}
       }    
 
-      //cerr<<"SP: ";
-      //for(set<int>::iterator it=SP.begin(); it!= SP.end(); it++)
-      //  cerr<<*it<<" ";
-      //cerr<<"\n";
+#ifdef DEBUG
+      wcerr<<L"SP: ";
+      for(set<int>::iterator it=SP.begin(); it!= SP.end(); it++)
+        wcerr<<*it<<L" ";
+      wcerr<<L"\n";
+#endif
 
       if (consecutive(SP)) {
-	//cerr<<"SP consecutive\n";
+#ifdef DEBUG
+	cerr<<"SP consecutive\n";
+#endif
 	int j1=*(SP.begin()); //min value
 	int j2=*(--SP.end()); //max value
 	int phrase_length=j2-j1+1;
 
-	//cerr<<"min:"<<j1<<"\n";
-	//cerr<<"max:"<<j2<<"\n";
-	//cerr<<"phrase:" <<sub_alignment(j1, j2, i1, i2).to_string()<<"\n";
-	//cerr<<"phrase length:"<<phrase_length<<"\n";
+#ifdef DEBUG
+	wcerr<<L"min:"<<j1<<L"\n";
+	wcerr<<L"max:"<<j2<<L"\n";
+	wcerr<<L"phrase:" <<sub_alignment(j1, j2, i1, i2).to_wstring()<<L"\n";
+	wcerr<<L"phrase length:"<<phrase_length<<L"\n";
+#endif
 	if ((phrase_length>=min_length)&&(phrase_length<=max_length)) {
 	  if (consistent(j1, j2, i1, i2)) {
 	    bil_phrases.push_back(sub_alignment(j1, j2, i1, i2));
-	    //cerr<<"Added\n";
+#ifdef DEBUG
+	    wcerr<<L"Added\n";
+#endif
 	  }
 	}
       } //else {
@@ -451,17 +463,25 @@ Alignment::refined_intersection(Alignment& al2) {
 
   //First, the intersection
   intersection(al2);
-  //cerr<<"(0) "<<to_string()<<"\n";
+#ifdef DEBUG
+  wcerr<<L"(0) "<<to_wstring()<<L"\n";
+#endif
   bool alignments_changed;
-  //int nit=0;
+#ifdef DEBUG
+  int nit=0;
+#endif
   do {
     alignments_changed=false;
-    //nit++;
+#ifdef DEBUG
+    nit++;
+#endif
     for (unsigned i=0; i<source.size(); i++) {
       for(unsigned j=0; j<target.size(); j++) {
 	if (!alignment[i][j]) {
 	  if ((al1[i][j]) || (al2.alignment[i][j])) {
-	    //cerr<<"   considering ("<<i<<","<<j<<")\n";
+#ifdef DEBUG
+	    wcerr<<L"   considering ("<<i<<L","<<j<<L")\n";
+#endif
 	    bool add_alignment=true;
 	    for(unsigned k=0; k<target.size(); k++) {
 	      if (alignment[i][k])
@@ -472,12 +492,16 @@ Alignment::refined_intersection(Alignment& al2) {
 		add_alignment=false;
 	    }
 	    if (!add_alignment) {
-	      //cerr<<"   ("<<i<<","<<"*) or (*,"<<j<<") are already in A\n";
+#ifdef DEBUG
+	      wcerr<<L"   ("<<i<<L","<<L"*) or (*,"<<j<<L") are already in A\n";
+#endif
 	      //The aligment can still be added if it has an horizontal
 	      //neighbor or a vertical neighbor already in 'alignment'
 	      if ( ((alignment[i-1][j])||(alignment[i+1][j])) ||
 		   ((alignment[i][j-1])||(alignment[i][j+1])) ) {
-		//cerr<<"   ("<<i<<","<<j<<") has an horizontal or a vertical neighbor in A\n";
+#ifdef DEBUG
+		wcerr<<L"   ("<<i<<L","<<j<<L") has an horizontal or a vertical neighbor in A\n";
+#endif
 		alignment[i][j]=true; 
 		//Now we that test there is no aligments in 'alignment' with
 		//both horizontal and vertical neighbors
@@ -487,7 +511,9 @@ Alignment::refined_intersection(Alignment& al2) {
 		    if (alignment[ii][jj]) {
 		      if ( ((alignment[ii-1][jj])||(alignment[ii+1][jj])) &&
 			   ((alignment[ii][jj-1])||(alignment[ii][jj+1])) ) {
-			//cerr<<"   ("<<i<<","<<j<<") has both horizontal and vertical neighbors\n";
+#ifdef DEBUG
+			wcerr<<L"   ("<<i<<L","<<j<<L") has both horizontal and vertical neighbors\n";
+#endif
 			neighbors=true;
 		      }
 		    }
@@ -499,7 +525,9 @@ Alignment::refined_intersection(Alignment& al2) {
 	      }
 	    }
 	    if (add_alignment) {
-	      //cerr<<"   adding ("<<i<<","<<j<<")\n";
+#ifdef DEBUG
+	      wcerr<<L"   adding ("<<i<<L","<<j<<L")\n";
+#endif
 	      alignment[i][j]=true;
 	      alignments_changed=true;
 	    }
@@ -507,7 +535,10 @@ Alignment::refined_intersection(Alignment& al2) {
 	}
       }
     }
-    //cerr<<"("<<nit<<") "<<to_string()<<"\n";
+
+#ifdef DEBUG
+    wcerr<<L"("<<nit<<L") "<<to_wstring()<<L"\n";
+#endif
   } while(alignments_changed);
 
   return true;
