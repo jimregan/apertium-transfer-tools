@@ -28,6 +28,7 @@
 #include "configure.H"
 #include "AlignmentTemplate.H"
 #include "TransferRule.H"
+#include "zfstream.H"
 #include <cmath>
 
 using namespace std;
@@ -44,6 +45,7 @@ void help(char *name) {
       <<"         count: Use directly the count provided with the AT (default)\n"
       <<"         log: The count is multiplied by 1 plus the log of the number of SL words of the AT\n"
       <<"         prod: The count is multiplied by the number of SL words of the AT\n"
+      <<"   --gzip|-z: Tell the program that the input file is gziped\n"
       <<"   --debug|-d: Print debug information in each generated rule\n"
       <<"   --help|-h: Show this help\n"
       <<"   --version|-v: Show version information\n\n";
@@ -63,6 +65,7 @@ int main(int argc, char* argv[]) {
   string at_file="";
   string atx_file="";
   string criterion="count";
+  bool use_zlib=false;
   bool debug=false;
 
   cerr<<"Command line: ";
@@ -80,13 +83,14 @@ int main(int argc, char* argv[]) {
 	{"input",     required_argument,  0, 'i'},
 	{"mincount",  required_argument,  0, 'm'},
 	{"criterion", required_argument,  0, 'c'},
+	{"gzip",            no_argument,  0, 'z'},
 	{"debug",           no_argument,  0, 'd'},
 	{"help",            no_argument,  0, 'h'},
 	{"version",         no_argument,  0, 'v'},
 	{0, 0, 0, 0}
       };
 
-    c=getopt_long(argc, argv, "x:i:m:c:dhv",long_options, &option_index);
+    c=getopt_long(argc, argv, "x:i:m:c:zdhv",long_options, &option_index);
     if (c==-1)
       break;
       
@@ -102,6 +106,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'c':
       criterion=optarg;
+      break;
+    case 'z':
+      use_zlib=true;
       break;
     case 'd':
       debug=true;
@@ -148,8 +155,12 @@ int main(int argc, char* argv[]) {
   }
 
   
-  wistream *fin;
-  fin = new wifstream(at_file.c_str());
+  istream *fin;
+  if (use_zlib) {
+    fin = new gzifstream(at_file.c_str());
+  }  else {
+    fin = new ifstream(at_file.c_str());
+  }
 
   if (fin->fail()) {
     cerr<<"Error: Cannot open input file '"<<at_file<<"'\n";
@@ -168,7 +179,7 @@ int main(int argc, char* argv[]) {
 
   cerr<<"Debug: "<<debug<<"\n";
 
-  wstring oneat;
+  string oneat;
   wstring all_rules=L"";
 
   int ndiscarded=0;
@@ -181,7 +192,7 @@ int main(int argc, char* argv[]) {
   while (!fin->eof()) {
     getline(*fin,oneat);
     if(oneat.length()>0) {
-      AlignmentTemplate at(oneat);
+      AlignmentTemplate at(UtfConverter::fromUtf8(oneat));
 
       double c;
       if (criterion=="prod")
@@ -217,9 +228,9 @@ int main(int argc, char* argv[]) {
   delete tr;
   delete fin;
 
-  wcout<<TransferRule::gen_apertium_transfer_head(debug);
-  wcout<<all_rules;
-  wcout<<TransferRule::gen_apertium_transfer_foot(debug);
+  cout<<UtfConverter::toUtf8(TransferRule::gen_apertium_transfer_head(debug));
+  cout<<UtfConverter::toUtf8(all_rules);
+  cout<<UtfConverter::toUtf8(TransferRule::gen_apertium_transfer_foot(debug));
 
   cerr<<ndiscarded<<" alignment templates were discarded because their counts were below the minimum allowed\n";
   cerr<<nrules<<" transfer rules were generated\n";
