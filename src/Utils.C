@@ -177,13 +177,13 @@ Utils::ftoa(double f) {
 double
 Utils::wtod(wstring s)
 {
-  return wcstod (s.c_str(), (wchar_t **)s.c_str()+s.size());
+  return wcstod (s.c_str(), 0);
 }
 
 long
 Utils::wtol(wstring s)
 {
-  return wcstol (s.c_str(), (wchar_t **)s.c_str()+s.size(), 0);
+  return wcstol (s.c_str(), 0, 0);
 } 
 
 wstring 
