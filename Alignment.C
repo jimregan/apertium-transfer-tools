@@ -95,7 +95,13 @@ Alignment::length() {
 wstring
 Alignment::to_wstring() {
   wstring s;
-  s=StringUtils::itoa((int)score)+L" |";
+  s=Utils::itoa((int)score);
+  s+=L" |";
+
+#ifdef DEBUG
+  wcerr << L"to_wstring: s = "<< s << "\n";
+#endif
+
 
   for(unsigned i=0; i<source.size(); i++) 
     s+=L" "+source[i];
@@ -108,7 +114,7 @@ Alignment::to_wstring() {
   for (unsigned i=0; i<source.size(); i++) {
     for(unsigned j=0; j<target.size(); j++) {
       if (alignment[i][j])
-	s+=L" "+StringUtils::itoa(i)+L":"+StringUtils::itoa(j);
+	s+=L" "+Utils::itoa(i)+L":"+Utils::itoa(j);
     }
   }
 
