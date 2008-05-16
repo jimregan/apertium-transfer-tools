@@ -160,18 +160,18 @@ Utils::tags2transferformat(const wstring& tags) {
   return s;
 }
 
-string
+wstring
 Utils::itoa(int n) {
   char str[32];
   sprintf(str, "%d",n);
-  return str;
+  return UtfConverter::fromUtf8(str);
 }
 
-string
+wstring
 Utils::ftoa(double f) {
   char str[32];
   sprintf(str, "%f",f);
-  return str;
+  return UtfConverter::fromUtf8(str);
 }
 
 double

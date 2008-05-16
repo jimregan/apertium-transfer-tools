@@ -45,6 +45,10 @@ Alignment::Alignment(wstring al, int nfields) {
   }
 
   score=Utils::wtod(v[0]);
+#ifdef DEBUG
+  cerr << "Score: " << score << "\n";
+#endif
+
   source=StringUtils::split_wstring(v[1], L" ");
   target=StringUtils::split_wstring(v[2], L" ");
   alig=StringUtils::split_wstring(v[3], L" ");
