@@ -27,18 +27,20 @@
 
 #include "configure.H"
 #include "Alignment.H"
+#include "zfstream.H"
 
 using namespace std;
 
 
 void help(char *name) {
   cerr<<"USAGE:\n";
-  cerr<<name<<" --input alignments --output phrases [--min <n>] [-max <n>]\n\n";
+  cerr<<name<<" --input alignments --output phrases [--min <n>] [-max <n>] [--zlib]\n\n";
   cerr<<"ARGUMENTS: \n"
       <<"   --input|-i: Specify a file containing the alignments to work with\n"
       <<"   --output|-o: Specify the file in which the extracted phrases must be writen\n"
       <<"   --min|-n: Set the minimum length of the bilingual phrases extracted\n"
       <<"   --max|-m: Set the maximum length of the bilingual phrases extracted\n"
+      <<"   --gzip|-z: Tell the program that the input file is gziped, the output will be gziped too\n"
       <<"   --help|-h: Show this help\n"
       <<"   --version|-v: Show version information\n\n";
   cerr<<"Note: To calculate the length of a bilingual phrase, only the source side is taken into account\n";
@@ -66,6 +68,7 @@ int main(int argc, char* argv[]) {
       {
 	{"input",  required_argument,   0, 'i'},
 	{"output", required_argument,   0, 'o'},
+	{"gzip",        no_argument,    0, 'z'},
 	{"min",    required_argument,   0, 'n'},
 	{"max",    required_argument,   0, 'm'},
 	{"help",        no_argument,    0, 'h'},
@@ -73,7 +76,7 @@ int main(int argc, char* argv[]) {
 	{0, 0, 0, 0}
       };
 
-    c=getopt_long(argc, argv, "i:o:n:m:hv",long_options, &option_index);
+    c=getopt_long(argc, argv, "i:o:n:m:zhv",long_options, &option_index);
     if (c==-1)
       break;
       
@@ -89,6 +92,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'm': 
       max=atoi(optarg);
+      break;
+    case 'z':
+      use_zlib=true;
       break;
     case 'h': 
       help(argv[0]);
@@ -142,8 +148,12 @@ int main(int argc, char* argv[]) {
   cerr<<"Bilingual phrases will be writen to file '"<<phrases_file<<"'\n";
   cerr<<"Bilingual phrases length will be between "<<min<<" and "<<max<<" words.\n\n";
   
-  wistream *falg;
-  falg = new wifstream(alignments_file.c_str());
+  istream *falg;
+  if (use_zlib) {
+    falg = new gzifstream(alignments_file.c_str());
+  }  else {
+    falg = new ifstream(alignments_file.c_str());
+  }
 
   if (falg->fail()) {
     cerr<<"Error: Cannot open input file '"<<alignments_file<<"'\n";
@@ -151,8 +161,12 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  wostream *fout;
-  fout = new wofstream(phrases_file.c_str());
+  ostream *fout;
+  if(use_zlib) {
+    fout = new gzofstream(phrases_file.c_str());
+  } else {
+    fout = new ofstream(phrases_file.c_str());
+  }
 
   if (fout->fail()) {
     cerr<<"Error: Cannot open output file '"<<phrases_file<<"'\n";
@@ -171,11 +185,11 @@ int main(int argc, char* argv[]) {
   start_time=time(NULL);
   cerr<<"Bilingual phrases extraction started at: "<<ctime(&start_time);
   vector<Alignment> bilingual_phrases;
-  wstring onealg;
+  string onealg;
   while (!falg->eof()) {
     getline(*falg,onealg);
     if(onealg.length()>0) {
-      Alignment al(onealg);
+      Alignment al(UtfConverter::fromUtf8(onealg));
       nalig++;
       //if(al.allwords_aligned()) {
       bilingual_phrases=al.extract_bilingual_phrases(min, max);

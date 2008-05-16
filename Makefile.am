@@ -13,20 +13,21 @@ EXTRA_DIST = giza++A3-to-apertium.awk apertium-transfer-at.dtd validate-xml-dtd.
              apertium-posttransfer.dtd
 
 apertium_xtract_bilingual_phrases_SOURCES =  apertium-xtract-bilingual-phrases.C Alignment.H Alignment.C \
-       Utils.H Utils.C 
+       Utils.H Utils.C zfstream.H zfstream.C
 apertium_xtract_bilingual_phrases_LDADD = $(LIBXML2_LIBS) $(LTTOOLBOX_LIBS) $(APERTIUM_LIBS) $(Z_LIBS)
 
 apertium_xtract_alignment_templates_SOURCES = apertium-xtract-alignment-templates.C Alignment.H Alignment.C \
-       Utils.H Utils.C LexicalizedWords.H LexicalizedWords.C ATXReader.H ATXReader.C \ 
+       Utils.H Utils.C LexicalizedWords.H LexicalizedWords.C ATXReader.H ATXReader.C zfstream.H zfstream.C \
        AlignmentTemplate.H AlignmentTemplate.C
 apertium_xtract_alignment_templates_LDADD = $(LIBXML2_LIBS) $(LTTOOLBOX_LIBS) $(APERTIUM_LIBS) $(Z_LIBS)
 
 apertium_gen_transfer_from_aligment_templates_SOURCES = apertium-gen-transfer-from-aligment-templates.C \
        AlignmentTemplate.H AlignmentTemplate.C Alignment.H Alignment.C LexicalizedWords.H LexicalizedWords.C \
-       Utils.H Utils.C TransferRule.H TransferRule.C
+       Utils.H Utils.C zfstream.H zfstream.C TransferRule.H TransferRule.C
 apertium_gen_transfer_from_aligment_templates_LDADD = $(LIBXML2_LIBS) $(LTTOOLBOX_LIBS) $(APERTIUM_LIBS) $(Z_LIBS) -lm
 
-apertium_symmetrize_alignments_SOURCES = apertium-symmetrize-alignments.C Alignment.H Alignment.C Utils.H Utils.C 
+apertium_symmetrize_alignments_SOURCES = apertium-symmetrize-alignments.C Alignment.H Alignment.C Utils.H Utils.C \
+       zfstream.H zfstream.C 
 apertium_symmetrize_alignments_LDADD = $(LTTOOLBOX_LIBS) $(APERTIUM_LIBS) $(Z_LIBS)
 
 apertium_posttransfer_SOURCES = apertium-posttransfer.C PTXReader.H PTXReader.C Utils.H Utils.C

@@ -27,8 +27,6 @@
 #include <iostream>
 #include <cmath>
 
-#define DEBUG
-
 Alignment::Alignment() {
 }
 
@@ -45,10 +43,6 @@ Alignment::Alignment(wstring al, int nfields) {
   }
 
   score=Utils::wtod(v[0]);
-#ifdef DEBUG
-  cerr << "Score: " << score << "\n";
-#endif
-
   source=StringUtils::split_wstring(v[1], L" ");
   target=StringUtils::split_wstring(v[2], L" ");
   alig=StringUtils::split_wstring(v[3], L" ");
@@ -95,13 +89,7 @@ Alignment::length() {
 wstring
 Alignment::to_wstring() {
   wstring s;
-  s=Utils::itoa(int(score));
-  s+=L" |";
-
-#ifdef DEBUG
-  wcerr << L"to_wstring: s = "<< s << "\n";
-#endif
-
+  s=Utils::itoa((int)score)+L" |";
 
   for(unsigned i=0; i<source.size(); i++) 
     s+=L" "+source[i];
@@ -127,10 +115,8 @@ Alignment::extract_bilingual_phrases(int min_length, int max_length) {
 
   for(unsigned i2=0; i2<target.size(); i2++) {
     for(unsigned i1=0; i1<=i2; i1++) {
-#ifdef DEBUG
-      cerr<<"I2 "<<i2<<"\n";
-      cerr<<"I1 "<<i1<<"\n";
-#endif
+      //cerr<<"I2 "<<i2<<"\n";
+      //cerr<<"I1 "<<i1<<"\n";
       set<int> SP;
       for(unsigned j=0; j<source.size(); j++) {
 	for(unsigned i=i1; i<=i2; i++) {
@@ -139,33 +125,25 @@ Alignment::extract_bilingual_phrases(int min_length, int max_length) {
 	}
       }    
 
-#ifdef DEBUG
-      wcerr<<L"SP: ";
-      for(set<int>::iterator it=SP.begin(); it!= SP.end(); it++)
-        wcerr<<*it<<L" ";
-      wcerr<<L"\n";
-#endif
+      //cerr<<"SP: ";
+      //for(set<int>::iterator it=SP.begin(); it!= SP.end(); it++)
+      //  cerr<<*it<<" ";
+      //cerr<<"\n";
 
       if (consecutive(SP)) {
-#ifdef DEBUG
-	cerr<<"SP consecutive\n";
-#endif
+	//cerr<<"SP consecutive\n";
 	int j1=*(SP.begin()); //min value
 	int j2=*(--SP.end()); //max value
 	int phrase_length=j2-j1+1;
 
-#ifdef DEBUG
-	wcerr<<L"min:"<<j1<<L"\n";
-	wcerr<<L"max:"<<j2<<L"\n";
-	wcerr<<L"phrase:" <<sub_alignment(j1, j2, i1, i2).to_wstring()<<L"\n";
-	wcerr<<L"phrase length:"<<phrase_length<<L"\n";
-#endif
+	//cerr<<"min:"<<j1<<"\n";
+	//cerr<<"max:"<<j2<<"\n";
+	//cerr<<"phrase:" <<sub_alignment(j1, j2, i1, i2).to_string()<<"\n";
+	//cerr<<"phrase length:"<<phrase_length<<"\n";
 	if ((phrase_length>=min_length)&&(phrase_length<=max_length)) {
 	  if (consistent(j1, j2, i1, i2)) {
 	    bil_phrases.push_back(sub_alignment(j1, j2, i1, i2));
-#ifdef DEBUG
-	    wcerr<<L"Added\n";
-#endif
+	    //cerr<<"Added\n";
 	  }
 	}
       } //else {
@@ -279,11 +257,6 @@ Alignment::sub_alignment(int from_source, int to_source, int from_target, int to
 ostream& operator << (ostream& os, Alignment& al) {
   wstring w = al.to_wstring();
   string s=UtfConverter::toUtf8(w);
-
-  if(s.length()==0) {
-    cerr<<"Warning: received empty alignment\n";
-    return os;
-  }
 
   os<< s;
   return os;
@@ -473,25 +446,17 @@ Alignment::refined_intersection(Alignment& al2) {
 
   //First, the intersection
   intersection(al2);
-#ifdef DEBUG
-  wcerr<<L"(0) "<<to_wstring()<<L"\n";
-#endif
+  //cerr<<"(0) "<<to_string()<<"\n";
   bool alignments_changed;
-#ifdef DEBUG
-  int nit=0;
-#endif
+  //int nit=0;
   do {
     alignments_changed=false;
-#ifdef DEBUG
-    nit++;
-#endif
+    //nit++;
     for (unsigned i=0; i<source.size(); i++) {
       for(unsigned j=0; j<target.size(); j++) {
 	if (!alignment[i][j]) {
 	  if ((al1[i][j]) || (al2.alignment[i][j])) {
-#ifdef DEBUG
-	    wcerr<<L"   considering ("<<i<<L","<<j<<L")\n";
-#endif
+	    //cerr<<"   considering ("<<i<<","<<j<<")\n";
 	    bool add_alignment=true;
 	    for(unsigned k=0; k<target.size(); k++) {
 	      if (alignment[i][k])
@@ -502,16 +467,12 @@ Alignment::refined_intersection(Alignment& al2) {
 		add_alignment=false;
 	    }
 	    if (!add_alignment) {
-#ifdef DEBUG
-	      wcerr<<L"   ("<<i<<L","<<L"*) or (*,"<<j<<L") are already in A\n";
-#endif
+	      //cerr<<"   ("<<i<<","<<"*) or (*,"<<j<<") are already in A\n";
 	      //The aligment can still be added if it has an horizontal
 	      //neighbor or a vertical neighbor already in 'alignment'
 	      if ( ((alignment[i-1][j])||(alignment[i+1][j])) ||
 		   ((alignment[i][j-1])||(alignment[i][j+1])) ) {
-#ifdef DEBUG
-		wcerr<<L"   ("<<i<<L","<<j<<L") has an horizontal or a vertical neighbor in A\n";
-#endif
+		//cerr<<"   ("<<i<<","<<j<<") has an horizontal or a vertical neighbor in A\n";
 		alignment[i][j]=true; 
 		//Now we that test there is no aligments in 'alignment' with
 		//both horizontal and vertical neighbors
@@ -521,9 +482,7 @@ Alignment::refined_intersection(Alignment& al2) {
 		    if (alignment[ii][jj]) {
 		      if ( ((alignment[ii-1][jj])||(alignment[ii+1][jj])) &&
 			   ((alignment[ii][jj-1])||(alignment[ii][jj+1])) ) {
-#ifdef DEBUG
-			wcerr<<L"   ("<<i<<L","<<j<<L") has both horizontal and vertical neighbors\n";
-#endif
+			//cerr<<"   ("<<i<<","<<j<<") has both horizontal and vertical neighbors\n";
 			neighbors=true;
 		      }
 		    }
@@ -535,9 +494,7 @@ Alignment::refined_intersection(Alignment& al2) {
 	      }
 	    }
 	    if (add_alignment) {
-#ifdef DEBUG
-	      wcerr<<L"   adding ("<<i<<L","<<j<<L")\n";
-#endif
+	      //cerr<<"   adding ("<<i<<","<<j<<")\n";
 	      alignment[i][j]=true;
 	      alignments_changed=true;
 	    }
@@ -545,10 +502,7 @@ Alignment::refined_intersection(Alignment& al2) {
 	}
       }
     }
-
-#ifdef DEBUG
-    wcerr<<L"("<<nit<<L") "<<to_wstring()<<L"\n";
-#endif
+    //cerr<<"("<<nit<<") "<<to_string()<<"\n";
   } while(alignments_changed);
 
   return true;
