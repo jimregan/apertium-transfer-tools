@@ -26,6 +26,8 @@
 #include <cstdlib>
 #include <iostream>
 
+#define DEBUG
+
 LexicalizedWords AlignmentTemplate::source_lexicalized_words;
 LexicalizedWords AlignmentTemplate::target_lexicalized_words;
 
@@ -294,23 +296,31 @@ bool
 AlignmentTemplate::is_equivalent_to_word_for_word(Alignment& al, FSTProcessor& fstp) {
   wstring al_target=L"";
   wstring at_translation=L"";
-  //cerr<<"AT: "<<to_string()<<"\n";
-  //cerr<<"AL: "<<al<<"\n";
+#ifdef DEBUG
+  cerr<<"AT: "<<to_string()<<"\n";
+  cerr<<"AL: "<<al<<"\n";
+#endif
   for(unsigned i=0; i<target.size(); i++) {
     if (at_translation.length()>0)
       at_translation+=L" ";
 
     if (target[i]==L"__UNKNOWN__") {
       at_translation+=target[i];
-      //cerr<<"Unknown word: "<<target[i]<<"\n";
+#ifdef DEBUG
+      wcerr<<L"Unknown word: "<<target[i]<<L"\n";
+#endif
     } else if (target[i][0]!=L'<') { //It's a close word we copy it as is
       at_translation+=L"^"+target[i]+L"$";
-      //cerr<<"Close word: "<<target[i]<<"\n";
+#ifdef DEBUG
+      wcerr<<L"Close word: "<<target[i]<<L"\n";
+#endif
     }  else {
       int p=get_open_source_word_pos(i);
       wstring w=Utils::remove_begin_and_end_marks(al.source[p]);
       wstring t=fstp.biltrans(w, false);
-      //cerr<<"Source: "<<al.source[p]<<" Target: "<<target[i]<<" Translation: "<<t<<"\n";
+#ifdef DEBUG
+      wcerr<<L"Source: "<<al.source[p]<<L" Target: "<<target[i]<<L" Translation: "<<t<<L"\n";
+#endif
       at_translation+=L"^"+Utils::get_lemma(t)+target[i]+L"$";
     }
   }
@@ -327,9 +337,11 @@ AlignmentTemplate::is_equivalent_to_word_for_word(Alignment& al, FSTProcessor& f
   at_translation=StringUtils::tolower(at_translation);
   al_target=StringUtils::tolower(al_target);
 
-  //cerr<<"TRANSLATION: "<<at_translation<<"\n";
-  //cerr<<"TL AL SIDE: "<<al_target<<"\n";
-  //cerr<<"Equivalent to word4word: "<<(al_target==at_translation)<<"\n\n";
+#ifdef DEBUG
+  wcerr<<L"TRANSLATION: "<<at_translation<<L"\n";
+  wcerr<<L"TL AL SIDE: "<<al_target<<L"\n";
+  wcerr<<L"Equivalent to word4word: "<<(al_target==at_translation)<<L"\n\n";
+#endif
   return (al_target==at_translation);
 }
 */
@@ -339,9 +351,10 @@ AlignmentTemplate::is_equivalent_to_word_for_word(Alignment& al, FSTProcessor& f
   wstring word4word=L"";
   wstring translation=L"";
 
-  //cerr<<"AT: "<<to_string()<<"\n";
-  //cerr<<"AL: "<<al<<"\n";
-
+#ifdef DEBUG
+  wcerr<<L"AT: "<<to_wstring()<<L"\n";
+  wcerr<<L"AL: "<<al<<L"\n";
+#endif
   //First compute the translation applying the AT
   for(unsigned i=0; i<target.size(); i++) {
     if (translation.length()>0)
@@ -374,9 +387,11 @@ AlignmentTemplate::is_equivalent_to_word_for_word(Alignment& al, FSTProcessor& f
   translation=StringUtils::tolower(translation);
   word4word=StringUtils::tolower(word4word);
 
-  //cerr<<"TRANSLATION: "<<translation<<"\n";
-  //cerr<<"WORD4WORD: "<<word4word<<"\n";
-  //cerr<<"Equivalent to word4word: "<<(translation==word4word)<<"\n\n";
+#ifdef DEBUG
+  wcerr<<L"TRANSLATION: "<<translation<<L"\n";
+  wcerr<<L"WORD4WORD: "<<word4word<<L"\n";
+  wcerr<<L"Equivalent to word4word: "<<(translation==word4word)<<L"\n\n";
+#endif
 
   return (translation==word4word);
 }
