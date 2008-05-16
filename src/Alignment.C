@@ -95,7 +95,7 @@ Alignment::length() {
 wstring
 Alignment::to_wstring() {
   wstring s;
-  s=Utils::itoa((int)score);
+  s=Utils::itoa(int(score));
   s+=L" |";
 
 #ifdef DEBUG
