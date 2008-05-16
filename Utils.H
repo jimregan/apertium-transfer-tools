@@ -22,6 +22,7 @@
 
 #include <string>
 #include <vector>
+#include <apertium/utf_converter.h>
 
 using namespace std;
 
