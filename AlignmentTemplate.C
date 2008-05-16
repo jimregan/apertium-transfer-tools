@@ -297,8 +297,8 @@ AlignmentTemplate::is_equivalent_to_word_for_word(Alignment& al, FSTProcessor& f
   wstring al_target=L"";
   wstring at_translation=L"";
 #ifdef DEBUG
-  cerr<<"AT: "<<to_string()<<"\n";
-  cerr<<"AL: "<<al<<"\n";
+  wcerr<<L"AT: "<<to_wstring()<<L"\n";
+  wcerr<<L"AL: "<<al<<L"\n";
 #endif
   for(unsigned i=0; i<target.size(); i++) {
     if (at_translation.length()>0)
