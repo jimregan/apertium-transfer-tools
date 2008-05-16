@@ -74,9 +74,9 @@ class Utils {
   //Ex. of output: n.m.sg
   static wstring tags2transferformat(const wstring& tags);
 
-  static string itoa(int n);
+  static wstring itoa(int n);
   
-  static string ftoa(double f);
+  static wstring ftoa(double f);
 
   static double wtod(wstring s);
 
