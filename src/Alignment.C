@@ -258,13 +258,25 @@ ostream& operator << (ostream& os, Alignment& al) {
   wstring w = al.to_wstring();
   string s=UtfConverter::toUtf8(w);
 
+  if(s.length()==0) {
+    cerr<<"Warning: received empty alignment\n";
+    return os;
+  }
+
   os<< s;
   return os;
 }
 
 wostream& operator << (wostream& os, Alignment& al) {
 
-  os<<al.to_wstring();
+  wstring w=al.to_wstring();
+
+  if(w.length()==0) {
+    wcerr<<L"Warning: received empty alignment\n";
+    return os;
+  }
+
+  os<<w;
   return os;
 
   /*
