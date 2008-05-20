@@ -8,14 +8,14 @@ m4_define([required_apertium_version], [3.0])
 m4_define([required_libxml_version], [2.6.17])
 m4_define([required_libpcre_version], [6.4])
 
-AC_INIT([apertium-transfer-tools], [0.9.1], [fsanchez@dlsi.ua.es])
+AC_INIT([apertium-transfer-tools], [1.0.0], [fsanchez@dlsi.ua.es])
 
 AC_CONFIG_HEADERS([src/configure.H])
 
 # Release versioning
-GENERIC_MAJOR_VERSION=0
-GENERIC_MINOR_VERSION=9
-GENERIC_MICRO_VERSION=1
+GENERIC_MAJOR_VERSION=1
+GENERIC_MINOR_VERSION=0
+GENERIC_MICRO_VERSION=0
 
 GENERIC_API_VERSION=$GENERIC_MAJOR_VERSION.$GENERIC_MINOR_VERSION
 AC_SUBST(GENERIC_API_VERSION)
@@ -180,4 +180,4 @@ AC_CHECK_DECLS([getopt_long])
 #AC_CHECK_FUNCS([setlocale strdup])
 #AC_CHECK_FUNCS([setlocale])
 
-AC_OUTPUT([Makefile src/Makefile apertium-transfer-tools-0.9.pc])
+AC_OUTPUT([Makefile src/Makefile apertium-transfer-tools-1.0.pc])
