@@ -483,7 +483,7 @@ If no format information is present it is removed. -->
         <test>
           <or>
             <equal>
-              <clip pos="1" side="tl" part="tags" queue="no"/>
+              <clip pos="1" side="tl" part="tags" queue="no"/>
               <lit-tag v="adj"/>
             </equal>
             <equal>
