@@ -25,6 +25,7 @@
 #include <clocale>
 
 #include <apertium/utf_converter.h>
+#include <apertium/string_utils.h>
 #include "configure.H"
 #include "AlignmentTemplate.H"
 #include "TransferRule.H"
@@ -62,11 +63,21 @@ int main(int argc, char* argv[]) {
 
   double mincount=0;
 
+  string attr_file="";
+
   string at_file="";
   string atx_file="";
   string criterion="count";
   bool use_zlib=false;
   bool debug=false;
+  bool generalise=false;
+  bool providedpatterns=false;
+  bool novarsdetermined=false;
+  bool nodoublecheckrestrictions=false;
+  bool onepatternperrule=false;
+  bool usediscardrule=false;
+  bool explicitemptytags=false;
+  bool emptyrestrictionsmatcheverything=false;
 
   cerr<<"Command line: ";
   for(int i=0; i<argc; i++)
@@ -79,10 +90,19 @@ int main(int argc, char* argv[]) {
   while (true) {
     static struct option long_options[] =
       {
+	{"attributes",       required_argument,  0, 'a'},
 	{"atx",       required_argument,  0, 'x'},
 	{"input",     required_argument,  0, 'i'},
 	{"mincount",  required_argument,  0, 'm'},
 	{"criterion", required_argument,  0, 'c'},
+	{"explicitemptytags",            no_argument,  0, 'e'},
+	{"generalise",            no_argument,  0, 'g'},
+	{"providedpatterns",            no_argument,  0, 'p'},
+	{"novarsdetermined",            no_argument,  0, 'n'},
+	{"nodoublecheckrestrictions",            no_argument,  0, 'r'},
+	{"onepatternperrule",            no_argument,  0, 'o'},
+	{"usediscardrule",            no_argument,  0, 's'},
+	{"emptyrestrictionsmatcheverything",            no_argument,  0, 'y'},
 	{"gzip",            no_argument,  0, 'z'},
 	{"debug",           no_argument,  0, 'd'},
 	{"help",            no_argument,  0, 'h'},
@@ -90,11 +110,14 @@ int main(int argc, char* argv[]) {
 	{0, 0, 0, 0}
       };
 
-    c=getopt_long(argc, argv, "x:i:m:c:zdhv",long_options, &option_index);
+    c=getopt_long(argc, argv, "a:x:i:m:c:egpnroszdhv",long_options, &option_index);
     if (c==-1)
       break;
       
     switch (c) {
+	case 'a': 
+      attr_file=optarg;
+      break;
     case 'x': 
       atx_file=optarg;
       break;
@@ -110,6 +133,30 @@ int main(int argc, char* argv[]) {
     case 'z':
       use_zlib=true;
       break;
+    case 'n':
+     novarsdetermined=true;
+	 break;
+	case 'e':
+	 explicitemptytags=true;
+	 break;
+	case 'g':
+     generalise=true;
+	 break;
+	case 'p':
+     providedpatterns=true;
+	 break;
+	case 'r':
+	 nodoublecheckrestrictions=true;
+	 break;
+	case 'o':
+	 onepatternperrule=true;
+	 break;
+	case 's':
+	 usediscardrule=true;
+	 break;
+	case 'y':
+	  emptyrestrictionsmatcheverything=true;
+	  break;
     case 'd':
       debug=true;
       break;
@@ -154,6 +201,27 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  if(attr_file.size()>0)
+  {
+	  istream *fattrin;
+	  fattrin=new ifstream(attr_file.c_str());
+	  if (fattrin->fail()) {
+		cerr<<"Error: Cannot open input file '"<<attr_file<<"'\n";
+		delete fattrin;
+		exit(EXIT_FAILURE);
+	  }
+	  TransferRule::load_attributes(fattrin);
+	  delete fattrin;
+  }
+
+  TransferRule::set_using_explicit_empty_tags(explicitemptytags);
+  TransferRule::set_generalise(generalise);
+  TransferRule::set_provided_patterns(providedpatterns);
+  TransferRule::set_novarsdetermined(novarsdetermined);
+  TransferRule::set_onepatternperrule(onepatternperrule);
+  TransferRule::set_no_double_check_restrictions(nodoublecheckrestrictions);
+  TransferRule::set_use_discard_rule(usediscardrule);
+  TransferRule::set_empty_restrictions_match_everything(emptyrestrictionsmatcheverything);
   
   istream *fin;
   if (use_zlib) {
@@ -192,7 +260,22 @@ int main(int argc, char* argv[]) {
   while (!fin->eof()) {
     getline(*fin,oneat);
     if(oneat.length()>0) {
-      AlignmentTemplate at(UtfConverter::fromUtf8(oneat));
+	  
+	  vector<wstring> *pattern=NULL;
+	  
+	  wstring atwstr=UtfConverter::fromUtf8(oneat);
+	  if(providedpatterns)
+	  {
+		  int pos=atwstr.find(L'|');
+		  wstring patternstr=atwstr.substr(0,pos);
+		  pattern=new vector<wstring>();
+		  vector<wstring> pieces= StringUtils::split_wstring(patternstr,L" ");
+		  *pattern=pieces;
+		  
+		  atwstr=atwstr.substr(pos+1);
+	  }
+	  
+      AlignmentTemplate at(atwstr);
 
       double c;
       if (criterion=="prod")
@@ -204,12 +287,12 @@ int main(int argc, char* argv[]) {
 
       if(c>=(double)mincount) {
 	nats++;
-	if (!(tr->add_alignment_template(at))) {
+	if (!(tr->add_alignment_template(at,pattern))) {
 	  all_rules+=tr->gen_apertium_transfer_rule(debug);
 	  nrules++;
 	  delete tr;
 	  tr=new TransferRule;
-	  if (!(tr->add_alignment_template(at))) {
+	  if (!(tr->add_alignment_template(at,pattern))) {
 	    cerr<<"Error when adding an AT to an empty transfer rule\n";
 	    cerr<<"This should never happen\n";
 	    exit(EXIT_FAILURE);
@@ -218,12 +301,16 @@ int main(int argc, char* argv[]) {
       } else {
 	ndiscarded++;
       }
+      
+      delete pattern;
     }
   }
+  
   if (tr->get_number_alignment_templates()>0) {
     all_rules+=tr->gen_apertium_transfer_rule(debug);
     nrules++;
   }
+  
 
   delete tr;
   delete fin;

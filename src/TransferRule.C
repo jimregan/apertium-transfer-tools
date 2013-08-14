@@ -22,10 +22,38 @@
 #include "Utils.H"
 #include <apertium/string_utils.h>
 #include <algorithm>
+#include <clocale>
+#include <locale>
+#include <utility>
 
 set<pair<wstring, wstring> > TransferRule::categories;
-set<wstring> TransferRule::attributes;
+map<wstring,pair<set<wstring>, wstring> > TransferRule::attributes;
 int TransferRule::rule_counter=0;
+
+//Alignment templates contain explicit empty tags:
+//Some additional checks are done in rules
+bool TransferRule::using_explicit_empty_tags=false;
+
+//Pattern is first tag of each word
+bool TransferRule::sm_generalise=false;
+
+//Don't use global vars to estimate value of GD and ND
+bool TransferRule::no_vars_determined=false;
+
+//Patterns are provided in the input. Alignment templates
+//with different left sides may be grouped in the same rule
+bool TransferRule::provided_patterns=false;
+
+//only check queue=yes, enable it if dictionary restrictions are clean
+bool TransferRule::no_double_check_restrictions=false;
+
+//useless
+bool TransferRule::one_pattern_per_rule=false;
+
+//use new instruction to go back
+bool TransferRule::use_discard_rule=false;
+
+bool TransferRule::empty_restrictions_match_everything=false;
 
 TransferRule::TransferRule() {
   source=L"";
@@ -41,9 +69,76 @@ TransferRule::TransferRule(const TransferRule& tr) {
 TransferRule::~TransferRule() {
 }
 
+void 
+TransferRule::set_using_explicit_empty_tags(bool f)
+{
+	using_explicit_empty_tags=f;
+}
+
+void
+TransferRule::set_generalise(bool f)
+{
+	sm_generalise=f;
+}
+
+void 
+TransferRule::set_onepatternperrule(bool f)
+{
+	one_pattern_per_rule=f;
+}
+
+void 
+TransferRule::set_novarsdetermined(bool f)
+{
+	no_vars_determined=f;
+}
+
+void 
+TransferRule::set_provided_patterns(bool f)
+{
+	provided_patterns=f;
+}
+
+void 
+TransferRule::set_no_double_check_restrictions(bool f)
+{
+	no_double_check_restrictions=f;
+}
+
+void
+TransferRule::set_use_discard_rule(bool f)
+{
+	use_discard_rule=f;
+}
+
+void
+TransferRule::set_empty_restrictions_match_everything(bool f)
+{
+	empty_restrictions_match_everything=f;
+}
+
+
+
 bool 
-TransferRule::add_alignment_template(const AlignmentTemplate& at) {
-  wstring source_at=StringUtils::vector2wstring(at.source);
+TransferRule::add_alignment_template(const AlignmentTemplate& at, vector<wstring> *pattern) {
+  
+  wstring source_at=L"";
+  if(sm_generalise)
+  {
+	  for (unsigned i=0; i<at.source.size(); i++) {
+		wstring s=at.source[i];
+		if (source_at.size() > 0)
+			source_at+=L" ";
+		source_at+=Utils::get_first_tag(Utils::get_tags(s));
+	   }
+  }
+  else
+  {
+	 if (provided_patterns)
+		source_at=StringUtils::vector2wstring(*pattern);
+	 else
+		source_at=StringUtils::vector2wstring(at.source);
+  }
   if (source.length()==0)
     source=source_at;
 
@@ -52,10 +147,14 @@ TransferRule::add_alignment_template(const AlignmentTemplate& at) {
 
   ats.push_back(at);
 
+   vector<wstring> source_for_categories=at.source;
+   if(provided_patterns)
+	source_for_categories=*pattern;
+   
   //Now we revise the categories and the attributes that will be used
   //by the generated rules
-  for (unsigned i=0; i<at.source.size(); i++) {
-    wstring s=at.source[i];
+  for (unsigned i=0; i<source_for_categories.size(); i++) {
+    wstring s=source_for_categories[i];
     if (s.length()==0) {
       cerr<<"Error in TransferRule::add_alignment_template: an empty source word was found\n";
       exit(EXIT_FAILURE);
@@ -63,11 +162,25 @@ TransferRule::add_alignment_template(const AlignmentTemplate& at) {
     pair<wstring, wstring> cat;
 
     wstring tags=Utils::tags2transferformat(Utils::get_tags(s));
-
-    cat.first=Utils::get_lemma(s);
-    cat.second=tags;
-    categories.insert(cat);
-    attributes.insert(tags);
+    
+    if(sm_generalise)
+    {
+		//category is only first tag
+		cat.first=L"";
+		wstring tmpstr=Utils::get_first_tag(Utils::get_tags(s)).substr(1);
+		cat.second=tmpstr.substr(0,tmpstr.size()-1)+L".*";
+		//cat.second=tmpstr.substr(0,tmpstr.size()-1);
+	}
+	else
+	{
+		cat.first=Utils::get_lemma(s);
+		//In case of generalised alignment templates, remove all the generalised tags, and leave only a '*'
+		remove_generalised_tags(tags);
+		cat.second=tags;
+	}
+	categories.insert(cat);
+	//attributes.insert(tags);
+	
   }
 
   return true;
@@ -80,6 +193,9 @@ TransferRule::get_number_alignment_templates() {
   
 wstring 
 TransferRule::gen_apertium_transfer_rule(bool debug) {
+
+  locale loc(setlocale(LC_ALL,""));	
+ 
   wstring rule=L"";
   bool include_otherwise=true;
 
@@ -93,19 +209,42 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
   AlignmentTemplateGreaterThanByCount atcomparer;
   sort(ats.begin(), ats.end(), atcomparer);
 
+  //debug
+  //cerr<<"ats.size(): "<<ats.size()<<endl;
+
   rule+=L"<rule>\n";
 
   //The pattern to detect is the same for all AT within this transfer rule
   rule+=L"  <pattern>\n";
-  for(unsigned i=0; i<ats[0].source.size(); i++) {
-    wstring lemma=Utils::get_lemma(ats[0].source[i]);
-    wstring tags=Utils::tags2transferformat(Utils::get_tags(ats[0].source[i]));
-    rule+=L"    <pattern-item n=\"CAT__"+category_name(lemma,tags)+L"\"/>\n";
+  
+  vector<wstring> generalpattern=StringUtils::split_wstring(source,L" ");
+  
+  //for(unsigned i=0; i<ats[0].source.size(); i++) {
+	
+  for(unsigned i=0; i<generalpattern.size(); i++) {
+    wstring lemma=Utils::get_lemma(generalpattern[i]);
+    wstring tags=Utils::tags2transferformat(Utils::get_tags(generalpattern[i]));
+    wstring tagsnogen=tags;
+    remove_generalised_tags(tagsnogen);   
+    
+    if(sm_generalise)
+    {
+		wstring tmpstr=Utils::get_first_tag(Utils::get_tags(generalpattern[i])).substr(1);
+		rule+=L"    <pattern-item n=\"CAT__"+category_name(L"",tmpstr.substr(0,tmpstr.size()-1)+L".*")+L"\"/>\n";
+	}
+	else
+	{
+		rule+=L"    <pattern-item n=\"CAT__"+category_name(lemma,tagsnogen)+L"\"/>\n";
+	}
+    
   }
   rule+=L"  </pattern>\n";
 
   rule+=L"  <action>\n";
   rule+=L"    <choose>\n";
+
+
+
 
   //There is a set of different actions depending on the TL side of
   //each AT. Consequently, there's one <when> statement per AT 
@@ -116,25 +255,228 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
 
     int nconditions=0;
     wstring teststr=L"";
+	
+    
     //This AT can be applied if all restrictions are met
     for(unsigned j=0; j<ats[i].restrictions.size(); j++){
+	
       if (ats[i].restrictions[j]!=L"__CLOSEWORD__") {
+		  
 	nconditions++;
+	
 	teststr+=L"          <or>\n";
-
+	if (empty_restrictions_match_everything)
+	{
+	    wstring source_tags_transfer_format=Utils::tags2transferformat(Utils::get_tags(ats[i].source[j]));
+	    remove_generalised_tags(source_tags_transfer_format);
+	    remove_final_asterisk(source_tags_transfer_format);
+	    vector<wstring> nongenTags=StringUtils::split_wstring(source_tags_transfer_format,L".");
+	    
+	    teststr+=L"           <and>\n";	
+	    teststr+=L"            <begins-with>\n";
+	    teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\"tags\" queue=\"no\"/>\n";
+	    teststr+=L"              <lit-tag v=\""+StringUtils::split_wstring(Utils::tags2transferformat(ats[i].restrictions[j]),L".")[0]+L"\"/>\n";
+	    teststr+=L"            </begins-with>\n";
+	    
+	    vector<wstring> resTags=StringUtils::split_wstring(Utils::tags2transferformat(ats[i].restrictions[j]),L".");
+	    wstring partofspeech=resTags[0];
+	    
+	    for (unsigned k=1 ; k<resTags.size(); k++)
+	    {
+		wstring tag=resTags[k];
+		if(tag[0]==L'['){
+		  wstring attr=tag.substr(1);
+		  teststr+=L"               <equal>\n";
+		  teststr+=L"                 <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\""+attr+L"\"/>\n";
+		  teststr+=L"                 <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"sl\" part=\""+attr+L"\"/>\n";
+		  teststr+=L"               </equal>\n";
+		}
+		else if(tag[0]==L']'){
+		  wstring attr=tag.substr(1);
+		  teststr+=L"               <not><equal>\n";
+		  teststr+=L"                 <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\""+attr+L"\"/>\n";
+		  teststr+=L"                 <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"sl\" part=\""+attr+L"\"/>\n";
+		  teststr+=L"               </equal></not>\n";
+		}
+		else{
+		  wstring attr=get_attribute_for_tag(tag,partofspeech);
+		  teststr+=L"               <or>\n";
+		  teststr+=L"               <equal>\n";
+		  teststr+=L"                 <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\""+attr+L"\"/>\n";
+		  if(tag.size() >= 10 && tag.substr(0,10)==L"empty_tag_" )
+			teststr+=L"                 <lit v=\"\"/>\n";
+		  else
+			teststr+=L"                 <lit-tag v=\""+tag+L"\"/>\n";
+			
+		  teststr+=L"               </equal>\n";
+		  //A restriction with the same value that the sl tag may also mean that the tag dissappears (e.g., genders in es-en)
+		  if(std::find(nongenTags.begin(), nongenTags.end(), tag) != nongenTags.end()) {
+		    teststr+=L"               <equal>\n";
+		    teststr+=L"                 <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\""+attr+L"\"/>\n";
+		    teststr+=L"                 <lit v=\"\"/>\n";
+		    teststr+=L"               </equal>\n";
+		  }  
+		  teststr+=L"               </or>\n";
+		}
+	    }
+	    
+	    teststr+=L"           </and>\n";	
+	}
+	else
+	{
 	teststr+=L"            <equal>\n";
 	teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\"tags\" queue=\"no\"/>\n";
 	teststr+=L"              <lit-tag v=\""+Utils::tags2transferformat(ats[i].restrictions[j])+L"\"/>\n";
 	teststr+=L"            </equal>\n";
+	}
 
-	teststr+=L"            <equal>\n";
-	teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\"tags\" queue=\"yes\"/>\n";
-	teststr+=L"              <lit-tag v=\""+Utils::tags2transferformat(Utils::get_tags(ats[i].target[ats[i].get_open_target_word_pos(j)]))+L"\"/>\n";
-	teststr+=L"            </equal>\n";
+ 
+	int targetWordPos=ats[i].get_open_target_word_pos(j,false);
+	
+	if(targetWordPos!=-1)
+	{
+	
+	wstring target_transfer_format=Utils::tags2transferformat(Utils::get_tags(ats[i].target[targetWordPos]));
+	
+	bool isGeneralised=false;
+	for(int myi=0; myi<target_transfer_format.size(); myi++)
+    {
+		if(target_transfer_format[myi] == L'*')
+		{
+			target_transfer_format=target_transfer_format.substr(0,myi-1);
+			isGeneralised=true;
+			break;
+		}
+	} 
+	
+	if(!isGeneralised){
+		if(!no_double_check_restrictions)
+		{
+			teststr+=L"            <equal>\n";
+			teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\"tags\" queue=\"yes\"/>\n";
+			teststr+=L"              <lit-tag v=\""+target_transfer_format+L"\"/>\n";
+			teststr+=L"            </equal>\n";
+		}
+	}
+	else{
+				
+		vector<wstring> tltags=StringUtils::split_wstring(target_transfer_format,L".");
+		wstring partofspeech=tltags[0];
+		tltags.erase(tltags.begin());
+		
+		vector<wstring> tlattrs;
+		for(vector<wstring>::iterator it=tltags.begin(); it!=tltags.end(); ++it){
+			wstring attribute=get_attribute_for_tag((*it),*(tltags.begin()));
+			tlattrs.push_back(attribute);
+		}
+		
+		if(!no_double_check_restrictions)
+		{
+		
+			if(tltags.size() > 0)
+				teststr+=L"            <and>\n";
+			
+			if(attributes.find(attribute_pos_group_name(partofspeech))==attributes.end())
+			{
+				pair<wstring,pair<set<wstring>, wstring> > newelement;
+				newelement.first=attribute_pos_group_name(partofspeech);
+				pair<set<wstring>, wstring> newelementvalue;
+				newelementvalue.first.insert(partofspeech);
+				newelementvalue.second=L"";
+				attributes.insert(newelement);
+			}
+			
+			teststr+=L"               <equal>\n";
+			teststr+=L"                 <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\""+attribute_pos_group_name(partofspeech)+L"\"/>\n";
+			teststr+=L"                 <lit-tag v=\""+partofspeech+L"\"/>\n";
+			teststr+=L"               </equal>\n";
+			
+			for(int vcounter=0; vcounter < tltags.size(); vcounter++){
+				teststr+=L"               <equal>\n";
+				teststr+=L"                 <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\""+tlattrs[vcounter]+L"\"/>\n";
+				teststr+=L"                 <lit-tag v=\""+tltags[vcounter]+L"\"/>\n";
+				teststr+=L"               </equal>\n";
+			}
+			if(tltags.size() > 0)
+				teststr+=L"            </and>\n";
+		}
+		
+	}
+	
+	}
 
 	teststr+=L"          </or>\n";
       }
+      
+      //If we are working with generalised ATs, check also SL side, as
+      //ATs with different left side may be grouped in the same rule
+      if(sm_generalise || provided_patterns || using_explicit_empty_tags)
+      {
+		  wstring source_tags_transfer_format=Utils::tags2transferformat(Utils::get_tags(ats[i].source[j]));
+		  wstring source_lemma=Utils::get_lemma(ats[i].source[j]);
+		  
+		  if(source_lemma.size() > 0 && (sm_generalise || provided_patterns))
+		  {
+			nconditions++;
+			teststr+=L"            <or>";
+			
+			teststr+=L"            <equal>\n";
+			teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"sl\" part=\"lem\" />\n";
+			teststr+=L"              <lit v=\""+StringUtils::substitute(source_lemma,L"_",L" ")+L"\"/>\n";
+			teststr+=L"            </equal>\n";
+			
+			teststr+=L"            <equal>\n";
+			teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"sl\" part=\"lem\" />\n";
+			teststr+=L"              <lit v=\"";
+			teststr+=toupper<wchar_t>(StringUtils::substitute(source_lemma,L"_",L" ")[0],loc);
+			teststr+=StringUtils::substitute(source_lemma,L"_",L" ").substr(1)+L"\"/>\n";
+			teststr+=L"            </equal>\n";
+			
+			teststr+=L"            </or>\n";
+			
+		  }
+		  
+		  vector<wstring> alltags=StringUtils::split_wstring(source_tags_transfer_format,L".");
+		  remove_generalised_tags(source_tags_transfer_format);
+		  remove_final_asterisk(source_tags_transfer_format);
+		  vector<wstring> nongenTags=StringUtils::split_wstring(source_tags_transfer_format,L".");
+		  
+		  
+		  for(int tagi=1; tagi<nongenTags.size(); tagi++)
+		  {
+			if( !(nongenTags[tagi].size()>=3 &&  nongenTags[tagi].substr(0,3)==L"RES") )
+			{
+			nconditions++;
+			teststr+=L"            <equal>\n";
+			teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"sl\" part=\""+get_attribute_for_tag(nongenTags[tagi],nongenTags[0])+L"\" />\n";
+			if(nongenTags[tagi].size() >= 10 && nongenTags[tagi].substr(0,10)==L"empty_tag_" )
+				teststr+=L"              <lit v=\"\"/>\n";
+			else
+				teststr+=L"              <lit-tag v=\""+nongenTags[tagi]+L"\"/>\n";
+			teststr+=L"            </equal>\n";
+			}
+		  }
+		  
+		  //I think this chunk of code should be removed anyway but...
+		  if (!empty_restrictions_match_everything)
+		    for(int tagi=1; tagi<alltags.size(); tagi++)
+		    {
+			    wstring tag=alltags[tagi];
+			    if(tag.size()>0 && tag[0]==L'*')
+			    {
+				  nconditions++;
+			      teststr+=L"            <equal>\n";
+				  teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"sl\" part=\""+tag.substr(1)+L"\" />\n";
+				  teststr+=L"              <clip pos=\""+Utils::itoa(j+1)+L"\" side=\"tl\" part=\""+tag.substr(1)+L"\" />\n";
+				  teststr+=L"            </equal>\n";
+				  
+			    }
+		    }
+	  }
+      
     }
+    
+	
 
     if (nconditions==0) { //All words were close words. We introduce a
 			  //condition that is always true
@@ -142,7 +484,8 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
       teststr+=L"            <lit v=\"TRUE\"/>\n";
       teststr+=L"            <lit v=\"TRUE\"/>\n";
       teststr+=L"          </equal>\n";
-      include_otherwise=false;
+      //LO COMENTO PARA QUE MIS SCRIPTS DE DEPURACION FUNCIONEN BIEN
+      //include_otherwise=false;
     }
 
     if (nconditions>1) // There are more than one restriction to test
@@ -167,32 +510,142 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
     int blank_pos=0;
     for(unsigned j=0; j<ats[i].target.size(); j++) {      
       if (ats[i].target[j][0]!='<') { //It's a lexicalized word, we copy it as is
+    
+    wstring target_tags=Utils::tags2transferformat(Utils::get_tags(ats[i].target[j]));
+    wstring tagstoprint=Utils::tags2transferformat(Utils::get_tags(ats[i].target[j]));
+	vector<wstring> attributeNames=extract_attribute_names(tagstoprint);
+	vector<wstring> tagvector=StringUtils::split_wstring(tagstoprint,L".");
+	//remove_generalised_tags(tagstoprint);
+	//remove_final_asterisk(tagstoprint);
+    
+    int pos=-1;
+    
+    //Some tags come from bilingual dictionary. Get correct gender and number in case of GD/ND
+    if(attributeNames.size() > 0)
+	{
+		pos=ats[i].get_source_word_pos(j);
+		rule+=L"        <call-macro n=\"f_set_genre_num\">\n";
+		rule+=L"          <with-param pos=\""+Utils::itoa(pos+1)+L"\"/>\n";
+		rule+=L"        </call-macro>\n";
+	}
+    
 	rule+=L"        <out>\n";
 	rule+=L"          <lu>\n";
-	wstring target_tags=Utils::tags2transferformat(Utils::get_tags(ats[i].target[j]));
 	rule+=L"            <lit v=\""+StringUtils::substitute(Utils::get_lemma_without_queue(ats[i].target[j]),L"_",L" ")+L"\"/>\n";
-	rule+=L"            <lit-tag v=\""+target_tags+L"\"/>\n";
+	//rule+=L"            <lit-tag v=\""+tagstoprint+L"\"/>\n";
+	
+	//Some tags come from bilingual dictionary.
+	for(vector<wstring>::iterator it=tagvector.begin(); it!=tagvector.end(); ++it){
+		if( (*it).substr(0,1)==L"*" )
+			rule+=L"            <clip pos=\""+Utils::itoa(pos+1)+L"\" side=\"sl\" part=\""+(*it).substr(1)+L"\"/>\n";
+		else if ( (*it).substr(0,1)==L")" )
+		{
+			long locpos=Utils::wtol((*it).substr(1,4));
+			rule+=L"            <clip pos=\""+Utils::itoa((int) (locpos+1))+L"\" side=\"tl\" part=\""+(*it).substr(4)+L"\"/>\n";
+		}
+		else if ( (*it).substr(0,1)==L"(" )
+		{
+			long locpos=Utils::wtol((*it).substr(1,4));
+			rule+=L"            <clip pos=\""+Utils::itoa((int) (locpos+1))+L"\" side=\"sl\" part=\""+(*it).substr(4)+L"\"/>\n";
+		}
+		else
+			rule+=L"            <lit-tag v=\""+(*it)+L"\"/>\n";
+		}
+	//if(attributeNames.size() > 0)
+	//{
+	//	for(vector<wstring>::iterator it=attributeNames.begin(); it!=attributeNames.end(); ++it){
+	//		rule+=L"            <clip pos=\""+Utils::itoa(pos+1)+L"\" side=\"sl\" part=\""+(*it)+L"\"/>\n";
+	//	}
+	//}
+	//rule+=L"            <lit-tag v=\""+target_tags+L"\"/>\n";
 	rule+=L"            <lit v=\""+StringUtils::substitute(Utils::get_queue(ats[i].target[j]),L"_",L" ")+L"\"/>\n";
 	rule+=L"          </lu>\n";
 	rule+=L"        </out>\n";
 
-	wstring genre=Utils::get_tag_value(target_tags,L"m|f");
+	//Some tags come from bilingual dictionary. Copy gender/number to global variables
+	if(attributeNames.size() > 0)
+	{
+		rule+=L"        <call-macro n=\"f_genre_num\">\n";
+        rule+=L"          <with-param pos=\""+Utils::itoa(pos+1)+L"\"/>\n";
+        rule+=L"        </call-macro>\n";
+	}
+	
+	//Copy gender/number to global variables in case that they come directly from AT
+	wstring genre=Utils::get_tag_value(tagstoprint,L"m|f");
 	if(genre.length()>0)
 	  rule+=L"        <let><var n=\"genre\"/><lit-tag v=\""+genre+L"\"/></let>\n";
+	wstring number=Utils::get_tag_value(tagstoprint,L"sg|pl");
+	if(number.length()>0)
+	  rule+=L"        <let><var n=\"number\"/><lit-tag v=\""+number+L"\"/></let>\n";
 
       } else {
+
+	wstring tagstoprint=Utils::tags2transferformat(Utils::get_tags(ats[i].target[j]));
+	vector<wstring> attributeNames=extract_attribute_names(tagstoprint);
+	vector<wstring> tagvector=StringUtils::split_wstring(tagstoprint,L".");
+	
+	//remove_generalised_tags(tagstoprint);
+	//remove_final_asterisk(tagstoprint);
 	int pos=ats[i].get_open_source_word_pos(j);
+	
+	//Some tags come from bilingual dictionary. Get correct gender and number in case of GD/ND
+    if(attributeNames.size() > 0)
+	{
+		pos=ats[i].get_source_word_pos(j);
+		rule+=L"        <call-macro n=\"f_set_genre_num\">\n";
+		rule+=L"          <with-param pos=\""+Utils::itoa(pos+1)+L"\"/>\n";
+		rule+=L"        </call-macro>\n";
+	}
+	
 	rule+=L"        <out>\n";
 	rule+=L"          <lu>\n";
 	rule+=L"            <clip pos=\""+Utils::itoa(pos+1)+L"\" side=\"tl\" part=\"lemh\"/>\n";
-	rule+=L"            <lit-tag v=\""+Utils::tags2transferformat(Utils::get_tags(ats[i].target[j]))+L"\"/>\n";
+	
+	
+	for(vector<wstring>::iterator it=tagvector.begin(); it!=tagvector.end(); ++it){
+		if( (*it).substr(0,1)==L"*" )
+			rule+=L"            <clip pos=\""+Utils::itoa(pos+1)+L"\" side=\"sl\" part=\""+(*it).substr(1)+L"\"/>\n";
+		else if ( (*it).substr(0,1)==L")" )
+		{
+			long locpos=Utils::wtol((*it).substr(1,4));
+			rule+=L"            <clip pos=\""+Utils::itoa((int) (locpos+1))+L"\" side=\"tl\" part=\""+(*it).substr(4)+L"\"/>\n";
+		}
+		else if ( (*it).substr(0,1)==L"(" )
+		{
+			long locpos=Utils::wtol((*it).substr(1,4));
+			rule+=L"            <clip pos=\""+Utils::itoa((int) (locpos+1))+L"\" side=\"sl\" part=\""+(*it).substr(4)+L"\"/>\n";
+		}
+		else
+			rule+=L"            <lit-tag v=\""+(*it)+L"\"/>\n";
+	}
+	
+	//rule+=L"            <lit-tag v=\""+tagstoprint+L"\"/>\n";
+	
+	//for(vector<wstring>::iterator it=attributeNames.begin(); it!=attributeNames.end(); ++it){
+	//	rule+=L"            <clip pos=\""+Utils::itoa(pos+1)+L"\" side=\"tl\" part=\""+(*it)+L"\"/>\n";
+	//}
+	
 	rule+=L"            <clip pos=\""+Utils::itoa(pos+1)+L"\" side=\"tl\" part=\"lemq\"/>\n";
 	rule+=L"          </lu>\n";
 	rule+=L"        </out>\n";
 
+        
+        //Some tags come from bilingual dictionary. Copy gender/number to global variables
+	if(attributeNames.size() > 0)
+	{
         rule+=L"        <call-macro n=\"f_genre_num\">\n";
         rule+=L"          <with-param pos=\""+Utils::itoa(pos+1)+L"\"/>\n";
         rule+=L"        </call-macro>\n";
+     }
+        
+	//Copy gender/number to global variables in case that they come directly from AT
+	wstring genre=Utils::get_tag_value(tagstoprint,L"m|f");
+	if(genre.length()>0)
+	  rule+=L"        <let><var n=\"genre\"/><lit-tag v=\""+genre+L"\"/></let>\n";
+	wstring number=Utils::get_tag_value(tagstoprint,L"sg|pl");
+	if(number.length()>0)
+	  rule+=L"        <let><var n=\"number\"/><lit-tag v=\""+number+L"\"/></let>\n";
+        
       }
 
       if (blank_pos<(int)(ats[i].source.size()-1)) {
@@ -233,10 +686,17 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
     }
   }
 
+
+
   //Actions to perform when none of the ATs can be applied
   //word-for-word translation
   if(include_otherwise) {
     rule+=L"      <otherwise><!--Word-for-word translation-->\n";
+    
+    
+	  if(use_discard_rule)
+		rule+=L"        <reject-current-rule shifting=\"no\" />\n";
+    
     if (debug) {
       rule+=L"        <out>\n";
       rule+=L"          <lu><lit v=\"(rid:"+Utils::itoa(rule_id)+L" at:word-for-word)\"/></lu>\n";
@@ -283,6 +743,8 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
 
 wstring 
 TransferRule::gen_apertium_transfer_head(bool debug) {
+
+  locale loc(setlocale(LC_ALL,""));
   wstring head=L"";
 
   head+=L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -294,11 +756,24 @@ TransferRule::gen_apertium_transfer_head(bool debug) {
   for(it=categories.begin(); it!=categories.end(); it++) {
     head+=L"  <def-cat n=\"CAT__"+category_name(it->first,it->second)+L"\">\n";
     if (it->first.length()>0) //There is a lemma
+    {
       head+=L"    <cat-item lemma=\""+StringUtils::substitute(it->first,L"_",L" ")+L"\" tags=\""+it->second+L"\"/>\n";
+      
+      //Lemma in upper case too
+      head+=L"    <cat-item lemma=\"";
+      head+=toupper<wchar_t>(StringUtils::substitute(it->first,L"_",L" ")[0],loc);
+      head+=StringUtils::substitute(it->first,L"_",L" ").substr(1)+L"\" tags=\""+it->second+L"\"/>\n";
+    }
     else
+    {
       head+=L"    <cat-item tags=\""+it->second+L"\"/>\n";
+      if(sm_generalise ||  it->second[it->second.size()-1]==L'*'  )
+		head+=L"    <cat-item tags=\""+(it->second).substr(0,it->second.size()-2)+L"\"/>\n";
+    }
     head+=L"  </def-cat>\n";
   }
+
+  head+=L"<def-cat n=\"CAT__HASGENDER_NUMBER\"><cat-item tags=\"*.m.*\"/><cat-item tags=\"*.f.*\"/><cat-item tags=\"*.sg.*\"/><cat-item tags=\"*.pl.*\"/></def-cat>";
 
   head+=L"  <def-cat n=\"CAT__ND_GD\">\n";
   head+=L"    <cat-item tags=\"*.mf.*\"/>\n";
@@ -307,6 +782,15 @@ TransferRule::gen_apertium_transfer_head(bool debug) {
   head+=L"    <cat-item tags=\"*.sp.mf.*\"/>\n";
   head+=L"    <cat-item tags=\"*.mf.*.sp.*\"/>\n";
   head+=L"    <cat-item tags=\"*.sp.*.mf.*\"/>\n";
+  head+=L"  </def-cat>\n";
+  
+  head+=L"  <def-cat n=\"sent\">\n";
+  head+=L"    <cat-item tags=\"sent\"/>\n";
+  head+=L"    <cat-item tags=\"RESsent.sent\"/>\n";
+  head+=L"  </def-cat>\n";
+  
+  head+=L"  <def-cat n=\"any\">\n";
+  head+=L"    <cat-item tags=\"*\"/>\n";
   head+=L"  </def-cat>\n";
 
   head+=L"</section-def-cats>\n";
@@ -319,6 +803,16 @@ TransferRule::gen_apertium_transfer_head(bool debug) {
   //  head+="    <attr-item tags=\""+(*it2)+"\"/>\n";
   //  head+="  </def-attr>\n";
   //}
+  
+  
+  map<wstring,pair<set<wstring>, wstring> >::iterator it2;
+  for(it2=attributes.begin(); it2!=attributes.end(); it2++) {
+    head+=L"  <def-attr n=\""+(*it2).first+L"\">\n";
+    set<wstring> tagsfromattr=(*it2).second.first;
+    for(set<wstring>::iterator it3= tagsfromattr.begin(); it3!=tagsfromattr.end(); ++it3)
+		head+=L"    <attr-item tags=\""+(*it3)+L"\"/>\n";
+    head+=L"  </def-attr>\n";
+  }
 
   head+=L"  <def-attr n=\"gen\">\n";
   head+=L"    <attr-item tags=\"m\"/>\n";
@@ -388,6 +882,8 @@ TransferRule::gen_apertium_transfer_head(bool debug) {
   head+=L"      </test>\n";
   head+=L"      <let><var n=\"genre\"/><lit-tag v=\"f\"/></let>\n";
   head+=L"    </when>\n";
+  head+=L"  </choose>\n";
+  head+=L"  <choose>\n";
   head+=L"    <when>\n";
   head+=L"      <test>\n";
   head+=L"        <equal>\n";
@@ -409,57 +905,89 @@ TransferRule::gen_apertium_transfer_head(bool debug) {
   head+=L"  </choose>\n";
   head+=L"</def-macro>\n";
 
+ 
   head+=L"<def-macro n=\"f_set_genre_num\" npar=\"1\">\n";
   head+=L"<!--To set the genre of those words with GD, and the number of those words with ND. -->\n";
   head+=L"<!--This is only used in no alignment template at all is applied. -->\n";
-  head+=L"  <choose>\n";
-  head+=L"    <when>\n";
-  head+=L"      <test>\n";
-  head+=L"        <equal>\n";
-  head+=L"          <clip pos=\"1\" side=\"tl\" part=\"gen\"/>\n";
-  head+=L"          <lit-tag v=\"GD\"/>\n";
-  head+=L"        </equal>\n";
-  head+=L"      </test>\n";
-  head+=L"      <choose>\n";
-  head+=L"        <when>\n";
-  head+=L"          <test>\n";
-  head+=L"            <equal>\n";
-  head+=L"              <var n=\"genre\"/>\n";
-  head+=L"              <lit-tag v=\"f\"/>\n";
-  head+=L"            </equal>\n";
-  head+=L"          </test>\n";
-  head+=L"          <let><clip pos=\"1\" side=\"tl\" part=\"gen\"/><lit-tag v=\"f\"/></let>\n";
-  head+=L"        </when>\n";
-  head+=L"        <otherwise>\n";
-  head+=L"          <let><clip pos=\"1\" side=\"tl\" part=\"gen\"/><lit-tag v=\"m\"/></let>\n";
-  head+=L"        </otherwise>\n";
-  head+=L"      </choose>\n";
-  head+=L"    </when>\n";
-  head+=L"  </choose>\n";
-  head+=L"  <choose>\n";
-  head+=L"    <when>\n";
-  head+=L"      <test>\n";
-  head+=L"        <equal>\n";
-  head+=L"          <clip pos=\"1\" side=\"tl\" part=\"num\"/>\n";
-  head+=L"          <lit-tag v=\"ND\"/>\n";
-  head+=L"        </equal>\n";
-  head+=L"      </test>\n";
-  head+=L"      <choose>\n";
-  head+=L"        <when>\n";
-  head+=L"          <test>\n";
-  head+=L"            <equal>\n";
-  head+=L"              <var n=\"number\"/>\n";
-  head+=L"              <lit-tag v=\"pl\"/>\n";
-  head+=L"            </equal>\n";
-  head+=L"          </test>\n";
-  head+=L"          <let><clip pos=\"1\" side=\"tl\" part=\"num\"/><lit-tag v=\"pl\"/></let>\n";
-  head+=L"        </when>\n";
-  head+=L"        <otherwise>\n";
-  head+=L"          <let><clip pos=\"1\" side=\"tl\" part=\"num\"/><lit-tag v=\"sg\"/></let>\n";
-  head+=L"        </otherwise>\n";
-  head+=L"      </choose>\n";
-  head+=L"    </when>\n";
-  head+=L"  </choose>\n";
+  
+  if(no_vars_determined)
+  {
+	   head+=L"  <choose>\n";
+	  head+=L"    <when>\n";
+	  head+=L"      <test>\n";
+	  head+=L"        <equal>\n";
+	  head+=L"          <clip pos=\"1\" side=\"tl\" part=\"gen\"/>\n";
+	  head+=L"          <lit-tag v=\"GD\"/>\n";
+	  head+=L"        </equal>\n";
+	  head+=L"      </test>\n";
+	  //head+=L"      <let><clip pos=\"1\" side=\"tl\" part=\"gen\"/><lit-tag v=\"m\"/></let>\n";
+	  head+=L"    </when>\n";
+	  head+=L"  </choose>\n";
+	  head+=L"  <choose>\n";
+	  head+=L"    <when>\n";
+	  head+=L"      <test>\n";
+	  head+=L"        <equal>\n";
+	  head+=L"          <clip pos=\"1\" side=\"tl\" part=\"num\"/>\n";
+	  head+=L"          <lit-tag v=\"ND\"/>\n";
+	  head+=L"        </equal>\n";
+	  head+=L"      </test>\n";
+	  //head+=L"      <let><clip pos=\"1\" side=\"tl\" part=\"num\"/><lit-tag v=\"sg\"/></let>\n";
+	  head+=L"    </when>\n";
+	  head+=L"  </choose>\n";
+  }
+  else
+  {
+	  head+=L"  <choose>\n";
+	  head+=L"    <when>\n";
+	  head+=L"      <test>\n";
+	  head+=L"        <equal>\n";
+	  head+=L"          <clip pos=\"1\" side=\"tl\" part=\"gen\"/>\n";
+	  head+=L"          <lit-tag v=\"GD\"/>\n";
+	  head+=L"        </equal>\n";
+	  head+=L"      </test>\n";
+	  head+=L"      <choose>\n";
+	  head+=L"        <when>\n";
+	  head+=L"          <test>\n";
+	  head+=L"            <equal>\n";
+	  head+=L"              <var n=\"genre\"/>\n";
+	  head+=L"              <lit-tag v=\"f\"/>\n";
+	  head+=L"            </equal>\n";
+	  head+=L"          </test>\n";
+	  head+=L"          <let><clip pos=\"1\" side=\"tl\" part=\"gen\"/><lit-tag v=\"f\"/></let>\n";
+	  head+=L"        </when>\n";
+	  head+=L"        <otherwise>\n";
+	  head+=L"          <let><clip pos=\"1\" side=\"tl\" part=\"gen\"/><lit-tag v=\"m\"/></let>\n";
+	  head+=L"        </otherwise>\n";
+	  head+=L"      </choose>\n";
+	  head+=L"    </when>\n";
+	  head+=L"  </choose>\n";
+	  head+=L"  <choose>\n";
+	  head+=L"    <when>\n";
+	  head+=L"      <test>\n";
+	  head+=L"        <equal>\n";
+	  head+=L"          <clip pos=\"1\" side=\"tl\" part=\"num\"/>\n";
+	  head+=L"          <lit-tag v=\"ND\"/>\n";
+	  head+=L"        </equal>\n";
+	  head+=L"      </test>\n";
+	  head+=L"      <choose>\n";
+	  head+=L"        <when>\n";
+	  head+=L"          <test>\n";
+	  head+=L"            <equal>\n";
+	  head+=L"              <var n=\"number\"/>\n";
+	  head+=L"              <lit-tag v=\"pl\"/>\n";
+	  head+=L"            </equal>\n";
+	  head+=L"          </test>\n";
+	  head+=L"          <let><clip pos=\"1\" side=\"tl\" part=\"num\"/><lit-tag v=\"pl\"/></let>\n";
+	  head+=L"        </when>\n";
+	  head+=L"        <otherwise>\n";
+	  head+=L"          <let><clip pos=\"1\" side=\"tl\" part=\"num\"/><lit-tag v=\"sg\"/></let>\n";
+	  head+=L"        </otherwise>\n";
+	  head+=L"      </choose>\n";
+	  head+=L"    </when>\n";
+	  head+=L"  </choose>\n";
+  }
+  
+  
   head+=L"</def-macro>\n";
 
   head+=L"</section-def-macros>\n";
@@ -493,9 +1021,21 @@ TransferRule::gen_apertium_transfer_foot(bool debug) {
   foot+=L"      <clip pos=\"1\" side=\"tl\" part=\"whole\"/>\n";
   foot+=L"    </lu>\n";
   foot+=L"  </out>\n";
-  foot+=L"  </action>\n";
+  foot+=L"  </action><!--isolated word-->\n";
   foot+=L"</rule>\n";
-
+  
+  foot+=L"<rule>\n";
+  foot+=L"<pattern><pattern-item n=\"CAT__HASGENDER_NUMBER\"/></pattern><action> <call-macro n=\"f_genre_num\"><with-param pos=\"1\"/></call-macro> <call-macro n=\"f_set_genre_num\"><with-param pos=\"1\"/></call-macro> <out><lu> <clip pos=\"1\" side=\"tl\" part=\"whole\"/></lu></out> </action><!--isolated word-->\n";
+  foot+=L"</rule>\n";
+  
+  foot+=L"<rule>\n";
+  foot+=L"<pattern><pattern-item n=\"sent\"/></pattern><action> <let><var n=\"number\"/> <lit-tag v=\"sg\"/></let><let><var n=\"genre\"/><lit-tag v=\"m\"/></let> <out><lu> <clip pos=\"1\" side=\"tl\" part=\"whole\"/></lu></out></action><!--isolated word-->\n";
+  foot+=L"</rule>\n";
+  
+  foot+=L"<rule>\n";
+  foot+=L"<pattern><pattern-item n=\"any\"/></pattern><action>  <out><lu> <clip pos=\"1\" side=\"tl\" part=\"whole\"/></lu></out> </action><!--isolated word-->\n";
+  foot+=L"</rule>\n";
+  
   foot+=L"</section-rules>\n";
   foot+=L"</transfer>\n";
 
@@ -509,8 +1049,91 @@ TransferRule::category_name(const wstring& lemma, const wstring& tags) {
   if (lemma.length()>0)
     catname+=StringUtils::substitute(lemma,L"#",L"_")+L"_";
 
-  catname+=StringUtils::substitute(tags,L".",L"");
+  catname+=StringUtils::substitute(StringUtils::substitute(tags,L".",L""),L"*",L"_");
 
   return catname;
 }
 
+
+wstring 
+TransferRule::attribute_pos_group_name(const wstring& pos)
+{
+	wstring attrname=L"ispartofspeech"+pos;
+	
+	return attrname;
+}
+
+int
+TransferRule::load_attributes(istream* fin) {
+	string oneline;
+	wstring wline;
+	while (!fin->eof()) {
+		getline(*fin,oneline);
+		wline=UtfConverter::fromUtf8(oneline);
+		vector<wstring> parts=StringUtils::split_wstring(wline,L":");
+		if (parts.size()>=2){
+			vector<wstring> tags=StringUtils::split_wstring(parts[1],L",");
+			set<wstring> tagset(tags.begin(),tags.end());
+			pair< set<wstring>,wstring > content;
+			content.first=tagset;
+			content.second=L"";
+			if (parts.size() >= 3)
+				content.second=parts[2];
+			attributes[parts[0]]=content;
+		}
+	}
+}
+
+wstring
+TransferRule::get_attribute_for_tag(wstring &tag, wstring &pos) {
+	wstring attrname=L"";
+	if(tag.size() >= 10 && tag.substr(0,10)==L"empty_tag_")
+		attrname=tag.substr(10);
+	else
+	{
+		for ( map<wstring, pair< set<wstring>, wstring> >::iterator  it=  attributes.begin() ; it != attributes.end(); it++ ){
+			//wcerr<<L"looking for '"+tag+L"' in '"+(*it).first+L"'"<<endl;
+			if ((*it).second.first.find(tag)!=(*it).second.first.end() && ((*it).second.second ==L"" || (*it).second.second==pos ) )
+				attrname=(*it).first;
+		}
+	}
+	return attrname;
+}
+
+void
+TransferRule::remove_generalised_tags(wstring &tags)
+{
+	wchar_t c;
+    for(int i=0; i<tags.size(); i++)
+    {
+		c=tags[i];
+		if(c == L'*')
+		{
+			tags=tags.substr(0,i+1);
+			break;
+		}
+	} 
+}
+
+void
+TransferRule::remove_final_asterisk(wstring &tags)
+{
+	wchar_t c;
+	if(tags.size() >= 2)
+	{
+			if(tags[tags.size()-1]==L'*' && tags[tags.size()-2]==L'.')
+				tags=tags.substr(0,tags.size()-2);
+	}
+}
+
+vector<wstring>
+TransferRule::extract_attribute_names(wstring &tags)
+{
+	vector<wstring> output;
+	vector<wstring> pieces=StringUtils::split_wstring(tags,L".");
+	for(int i=0; i< pieces.size(); i++){
+		if (pieces[i][0]==L'*')
+			output.push_back(pieces[i].substr(1));
+	}
+	return output;	
+}

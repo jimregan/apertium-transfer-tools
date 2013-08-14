@@ -1,8 +1,10 @@
+
+
 SUBDIRS = src
 DIST_SUBDIRS = src
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = apertium-transfer-tools-$(GENERIC_RELEASE).pc
+pkgconfig_DATA = apertium-transfer-tools-generalisation-$(GENERIC_RELEASE).pc
 
 EXTRA_DIST=autogen.sh example/apertium-es-pt.posttransfer.ptx \
 example/filter_alignment_templates.awk example/preprocess_es_es-pt.sh \
