@@ -109,7 +109,7 @@ bool merge_and_print_mlu(vector<vector<wstring> >& mlu, deque<pair<wstring, wstr
 	  wcout<<buffer[0].second;
 	  buffer.pop_front();
 	}
-	cout<<"$";
+	wcout<<L"$";
 	return true;
       }
     }

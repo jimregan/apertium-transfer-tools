@@ -49,6 +49,8 @@ protected:
   //True if source size and the target size of both alignments (*this
   //and al2) are equal
   bool are_the_same_alignment(const Alignment& al2);
+  
+  static vector<wstring> marker_categories;
 public: 
        
   Alignment();
@@ -59,12 +61,14 @@ public:
     
   ~Alignment();
 
-  vector<Alignment> extract_bilingual_phrases(int min_length, int max_length);
+  vector<Alignment> extract_bilingual_phrases(int min_length, int max_length, int marker=-1);
 
   int get_source_length();
 
   int get_target_length();
 
+  void set_score(double p_score);
+  
   int length();
 
   wstring to_wstring();
@@ -85,6 +89,8 @@ public:
   //True if the first source word and the last source word are aligned 
   //with at least one target word and vice versa
   bool all_end_words_aligned();
+  
+  static void set_marker_categories(const vector<wstring> v);
   
   friend ostream& operator << (ostream& os, Alignment& al);
 

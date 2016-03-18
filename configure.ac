@@ -8,7 +8,7 @@ m4_define([required_apertium_version], [3.2])
 m4_define([required_libxml_version], [2.6.17])
 m4_define([required_libpcre_version], [6.4])
 
-AC_INIT([apertium-transfer-tools], [1.0.0], [fsanchez@dlsi.ua.es])
+AC_INIT([apertium-transfer-tools-generalisation], [1.0.0], [vmsanchez@dlsi.ua.es])
 
 AC_CONFIG_HEADERS([src/configure.H])
 
@@ -20,7 +20,7 @@ GENERIC_MICRO_VERSION=0
 GENERIC_API_VERSION=$GENERIC_MAJOR_VERSION.$GENERIC_MINOR_VERSION
 AC_SUBST(GENERIC_API_VERSION)
 
-PACKAGE=apertium-transfer-tools
+PACKAGE=apertium-transfer-tools-generalisation
 
 GENERIC_VERSION=$GENERIC_MAJOR_VERSION.$GENERIC_MINOR_VERSION.$GENERIC_MICRO_VERSION
 GENERIC_RELEASE=$GENERIC_MAJOR_VERSION.$GENERIC_MINOR_VERSION
@@ -32,6 +32,8 @@ VERSION=$GENERIC_VERSION
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 
 # Checks for programs.
+
+CXXFLAGS="-g"
 
 AC_MSG_CHECKING([Compilation architecture: PPC, i686, Other])
 ARCH=$(/bin/uname -m)
@@ -146,11 +148,14 @@ AC_CHECK_HEADER(pcreposix.h,
   AC_MSG_ERROR([*** unable to locate pcre library ***])),
   AC_MSG_ERROR([*** unable to locate pcreposix.h include file ***]))
 
-PKG_CHECK_MODULES(LIBXML2, [libxml-2.0 >= required_libxml_version])
+PKG_CHECK_MODULES(LIBXML2, [dnl
+  libxml-2.0 >= required_libxml_version])
 
-PKG_CHECK_MODULES(LTTOOLBOX, [lttoolbox-3.0 >= required_lttoolbox_version])
+PKG_CHECK_MODULES(LTTOOLBOX, [dnl
+  lttoolbox-3.2 >= required_lttoolbox_version])
   
-PKG_CHECK_MODULES(APERTIUM, [apertium-3.0 >= required_apertium_version])
+PKG_CHECK_MODULES(APERTIUM, [dnl
+  apertium-3.2 >= required_apertium_version])
 
 AC_PATH_PROG(XMLLINT, xmllint, no)
 
@@ -172,9 +177,9 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 
 #AC_CHECK_DECLS([fread_unlocked, fwrite_unlocked, fgetc_unlocked, fputc_unlocked, fputs_unlocked, getopt_long])
-AC_CHECK_DECLS([getopt_long])
+AC_CHECK_DECLS([getopt_long, getwchar_unlocked])
 
 #AC_CHECK_FUNCS([setlocale strdup])
 #AC_CHECK_FUNCS([setlocale])
 
-AC_OUTPUT([Makefile src/Makefile apertium-transfer-tools-1.0.pc])
+AC_OUTPUT([Makefile src/Makefile apertium-transfer-tools-generalisation-1.0.pc])

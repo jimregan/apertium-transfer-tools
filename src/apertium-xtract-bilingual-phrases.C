@@ -42,7 +42,8 @@ void help(char *name) {
       <<"   --max|-m: Set the maximum length of the bilingual phrases extracted\n"
       <<"   --gzip|-z: Tell the program that the input file is gziped, the output will be gziped too\n"
       <<"   --help|-h: Show this help\n"
-      <<"   --version|-v: Show version information\n\n";
+      <<"   --version|-v: Show version information\n\n"
+      <<"   --marker|-y: Only extract bilingual phrases compatible with the marker hypothesis";
   cerr<<"Note: To calculate the length of a bilingual phrase, only the source side is taken into account\n";
 }
 
@@ -56,6 +57,9 @@ int main(int argc, char* argv[]) {
 
   int min=-1;
   int max=10000;
+  
+  int markermode=-1;
+  string markersfile="";
 
   cerr<<"Command line: ";
   for(int i=0; i<argc; i++)
@@ -73,6 +77,9 @@ int main(int argc, char* argv[]) {
 	{"max",    required_argument,   0, 'm'},
 	{"help",        no_argument,    0, 'h'},
 	{"version",     no_argument,    0, 'v'},
+	{"marker",     required_argument,    0, 'y'},
+	{"soft-marker",     required_argument,    0, 's'},
+	{"hard-marker",     required_argument,    0, 'a'},
 	{0, 0, 0, 0}
       };
 
@@ -96,6 +103,18 @@ int main(int argc, char* argv[]) {
     case 'z':
       use_zlib=true;
       break;
+    case 'y':
+      markermode=0;
+      markersfile=optarg;
+      break;
+    case 's':
+      markermode=1;
+      markersfile=optarg;
+      break;
+    case 'a':
+      markermode=2;
+      markersfile=optarg;
+      break;	    
     case 'h': 
       help(argv[0]);
       exit(EXIT_SUCCESS);
@@ -181,18 +200,36 @@ int main(int argc, char* argv[]) {
   //int ndiscarded_bilph=0;
 
   int nalig=0;
+  
+  //Read markers file
+  if (markersfile != ""){
+	   ifstream myfile;
+	   myfile.open(markersfile.c_str());
+	   
+	   std::vector<std::wstring> lines;
+	   for (std::string line; std::getline( myfile, line ); /**/ )
+		lines.push_back( UtfConverter::fromUtf8(line) );
+	   Alignment::set_marker_categories(lines);
+	   myfile.close();
+  }
 
   start_time=time(NULL);
   cerr<<"Bilingual phrases extraction started at: "<<ctime(&start_time);
   vector<Alignment> bilingual_phrases;
   string onealg;
+  
+  double nwords=0;
+  
   while (!falg->eof()) {
     getline(*falg,onealg);
     if(onealg.length()>0) {
       Alignment al(UtfConverter::fromUtf8(onealg));
       nalig++;
+      al.set_score(nwords);
+      nwords+= (double) al.get_source_length();
+      
       //if(al.allwords_aligned()) {
-      bilingual_phrases=al.extract_bilingual_phrases(min, max);
+      bilingual_phrases=al.extract_bilingual_phrases(min, max, markermode);
 
       for (unsigned i=0; i<bilingual_phrases.size(); i++) {
 	nbilph++;
