@@ -33,6 +33,7 @@ protected:
   double score;
   vector<wstring> source;
   vector<wstring> target;
+  wstring label;
 
   //Matrix source.size x target.size with the alignments
   map<int, map<int, bool> > alignment;

@@ -38,7 +38,7 @@ Alignment::set_marker_categories(const vector<wstring> v) {
 Alignment::Alignment() {
 }
 
-Alignment::Alignment(wstring al, int nfields) {
+Alignment::Alignment(wstring al, int nfields) : label() {
   vector<wstring> v;
   vector<wstring> alig;
 
@@ -54,6 +54,9 @@ Alignment::Alignment(wstring al, int nfields) {
   source=StringUtils::split_wstring(v[1], L" ");
   target=StringUtils::split_wstring(v[2], L" ");
   alig=StringUtils::split_wstring(v[3], L" ");
+  if(v.size == 5) {
+    label = v[4];
+  }
 
   for(unsigned i=0; i<alig.size(); i++) {
     vector<wstring> an_alig;
@@ -73,6 +76,7 @@ Alignment::Alignment(const Alignment& al) {
   target=al.target;
   score=al.score;
   alignment=al.alignment;
+  label=al.label;
 }
     
 Alignment::~Alignment() {
