@@ -57,14 +57,14 @@ bool TransferRule::empty_restrictions_match_everything=false;
 
 bool TransferRule::generate_chunks=false;
 
-TransferRule::TransferRule() {
-  source=L"";
+TransferRule::TransferRule() : source(), chunk_tag(L"LRN") {
   rule_id=rule_counter;
   rule_counter++;
 }
   
 TransferRule::TransferRule(const TransferRule& tr) {
   source=tr.source;
+  chunk_tag=tr.chunk_tag;
   ats=tr.ats;
 }
     
@@ -181,7 +181,7 @@ int
 TransferRule::get_number_alignment_templates() {
   return ats.size();
 }
-  
+
 wstring 
 TransferRule::gen_apertium_transfer_rule(bool debug) {
   locale loc(setlocale(LC_ALL,""));
@@ -468,7 +468,7 @@ TransferRule::gen_apertium_transfer_rule(bool debug) {
     if (generate_chunks) {
        rule+=L"       <chunk name=\""+chunkName+L"\" case=\"caseFirstWord\">";
        rule+=L"       <tags>";
-       rule+=L"             <tag><lit-tag v=\"LRN\"/></tag>";
+       rule+=L"             <tag><lit-tag v=\""+chunk_tag+"\"/></tag>";
        rule+=L"       </tags>";
     }
 

@@ -71,6 +71,8 @@ private:
   static bool empty_restrictions_match_everything;
 
   static int rule_counter;
+
+  wstring chunk_tag;
   
   int rule_id;
 public: 
@@ -120,6 +122,8 @@ public:
   static void set_use_discard_rule(bool f);
 
   static void set_empty_restrictions_match_everything(bool f);
+
+  void set_chunk_tag(wstring chunk_tag);
 };
 
 #endif
